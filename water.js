@@ -84,20 +84,28 @@ function Water(gl) {
     }
 
     this.particles = [];
-    this.particles.push(new Particle([0.1, -0.4], 0.01));
-    this.particles.push(new Particle([-0.1, -0.4], 0.01));
+
+
+    for(var i = -0.3; i < 0.3; i += 0.05) {
+        this.particles.push(new Particle([i, -0.4], 0.01));
+
+    }
+
+//    this.particles.push(new Particle([-0.1, -0.4], 0.01));
 
     this.collisionBodies = [];
 
-    this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [1.0, 0.0, 0.0]));
+    this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [0.7, 0.2, 0.2]));
 
 
-    const FRAME_RADIUS = 0.02;
+    const FRAME_RADIUS = 0.03;
+    const FRAME_COLOR = [0,0.5,0];
+
     // frame
-    this.collisionBodies.push(new Capsule([-0.35, -0.5], [+0.35, -0.5], FRAME_RADIUS, [0.0, 1.0, 0.0]));
-    this.collisionBodies.push(new Capsule([-0.35, +0.4], [+0.35, +0.4], FRAME_RADIUS, [0.0, 1.0, 0.0]));
-    this.collisionBodies.push(new Capsule([-0.35, -0.5], [-0.35, +0.4], FRAME_RADIUS, [0.0, 1.0, 0.0]));
-    this.collisionBodies.push(new Capsule([+0.35, -0.5], [+0.35, +0.4], FRAME_RADIUS, [0.0, 1.0, 0.0]));
+    this.collisionBodies.push(new Capsule([-0.35, -0.5], [+0.35, -0.5], FRAME_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([-0.35, +0.4], [+0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([-0.35, -0.5], [-0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([+0.35, -0.5], [+0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
 
     this.collisionBodies.push(new Capsule([-0.25, +0.2], [+0.0, -0.0], FRAME_RADIUS, [0.0, 1.0, 0.0]));
 
