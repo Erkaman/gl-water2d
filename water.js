@@ -72,6 +72,7 @@ function Water(gl) {
 
     this.particles = [];
     this.particles.push(new Particle( [0.1,-0.4], 0.01 ));
+    this.particles.push(new Particle( [-0.1,-0.4], 0.01 ));
 
     this.collisionBodies = [];
 
@@ -110,9 +111,9 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     handle collision.
      */
 
-    for(var i = 0; i < this.particles.length; ++i) {
+    for(var iParticle = 0; iParticle < this.particles.length; ++iParticle) {
 
-        var particle = this.particles[i];
+        var particle = this.particles[iParticle];
 
         var mass = 1.0;
         var acceleration = [0, +9.82 * 0.0001];
@@ -123,9 +124,9 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         // collision handling:
-        for(var i = 0; i < this.collisionBodies.length; ++i) {
+        for(var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
 
-            var body = this.collisionBodies[i];
+            var body = this.collisionBodies[iBody];
 
             if(body.type == CIRCLE_BODY) {
                 // collision if F(X) <= 0
@@ -141,6 +142,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                 var Fx = vec2.squaredLength(  x_sub_c  ) - r*r;
 
                 if(Fx <= 0) {
+
 
                     // contact point
                     var cp = vec2.create();
@@ -175,6 +177,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             }
 
         }
+
     }
 
 
