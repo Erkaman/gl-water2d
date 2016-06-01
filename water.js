@@ -35,6 +35,7 @@ monomorphic is better than polymorphic.
 
 // collision body types:
 const CIRCLE_BODY = 0;
+const CAPSULE_BODY = 1;
 
 /*
  Constructor
@@ -70,16 +71,33 @@ function Water(gl) {
         this.type = CIRCLE_BODY;
     }
 
+    function Capsule(p1, p2, radius, color) {
+
+        this.p1 = vec2.fromValues( p1[0], p1[1] );
+        this.p2 = vec2.fromValues( p2[0], p2[1] );
+
+        this.radius = radius;
+        this.color = color;
+        this.type = CAPSULE_BODY;
+
+    }
+
     this.particles = [];
     this.particles.push(new Particle( [0.1,-0.4], 0.01 ));
     this.particles.push(new Particle( [-0.1,-0.4], 0.01 ));
 
     this.collisionBodies = [];
 
-    this.collisionBodies.push(new Circle([0.0,0.2], 0.3, [1.0, 0.0, 0.0]));
+  //  this.collisionBodies.push(new Circle([0.0,0.2], 0.3, [1.0, 0.0, 0.0]));
+//    this.collisionBodies.push(new Capsule([-0.6, 0.5], [0.9, -0.1], 0.04, [0.0, 1.0, 0.0]));
+
+    this.collisionBodies.push(new Capsule([-0.6, 0.1], [0.9, -0.1], 0.04, [0.0, 1.0, 0.0]));
+
 
 
     console.log("new particle: ", this.particles);
+
+
 
 }
 
@@ -171,8 +189,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                         particle.velocity,
                         vec2.scale(scratch, n , (1.0+cr) *  vec2.dot(particle.velocity, n) )
                     );
-
-
                 }
 
             }
@@ -195,7 +211,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
         if(body.type == CIRCLE_BODY)
             this._circle(body.position, body.radius, body.color,40 );
-
+        else if(body.type == CAPSULE_BODY)
+            this._capsule(body.p1, body.p2, body.radius, body.color,40 );
     }
 
     for(var i = 0; i < this.particles.length; ++i) {
@@ -204,11 +221,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
         this._circle(particle.position, particle.radius, [0.0, 0.0, 1.0],40 );
     }
-
-
-   // this.particles.push(new Particle( [0.1,-0.4], 0.01 ));
-
-    this._capsule ([0.1, 0.5], [0.9, -0.3], 0.1, [0,1,0], 30);
 }
 
 
