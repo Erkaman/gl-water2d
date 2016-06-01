@@ -36,7 +36,8 @@ shell.on("gl-render", function (t) {
     var gl = shell.gl;
     var canvas = shell.canvas;
 
-    water.update(canvas.width, canvas.height);
+
+    water.update(canvas.width, canvas.height, t);
 
     water.draw(gl);
     
@@ -51,7 +52,13 @@ shell.on("gl-render", function (t) {
     mouseLeftDownPrev = pressed;
 
     gui.begin(io, "Editor");
+
+    if(gui.button("CLICK"))
+        //gui.textLine("frame time " + t);
     
+        console.log("frame time ", t);
+
+
     gui.end(gl, canvas.width, canvas.height);
 });
 

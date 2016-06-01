@@ -5,8 +5,36 @@ var createShader = require("gl-shader");
 var mat4 = require("gl-mat4");
 var createTexture = require('gl-texture2d');
 var createBuffer = require('gl-buffer');
+var vec3 = require('gl-vec3');
+var vec2 = require('gl-vec2');
 
 var shaders = require("./shaders.js");
+
+
+/*
+Performance tips:
+
+intiialize everythng in function object constructor. dont add objects after the fact
+
+initialize all array elements before using them.
+
+index arrsy from 0, to end array, otherwise, it may get switched to dictionary mode.
+
+
+use javscrpt smi, small integer.
+
+use int arrays.
+
+double array unboxing.
+
+hidden classes.
+
+monomorphic is better than polymorphic.
+ */
+
+
+// collision body types:
+const CIRCLE_BODY = 0;
 
 /*
  Constructor
@@ -25,12 +53,36 @@ function Water(gl) {
     this.colorBufferObject = createBuffer(gl, [], gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
     this.uvBufferObject = createBuffer(gl, [], gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
     this.indexBufferObject = createBuffer(gl, [], gl.ELEMENT_ARRAY_BUFFER, gl.DYNAMIC_DRAW);
+
+
+    function Particle(position, radius) {
+
+        this.position = vec2.fromValues( position[0], position[1] );
+
+        this.velocity = vec2.fromValues( 0,0 );
+        this.radius = radius;
+    }
+
+    function Circle(position, radius, color) {
+        this.position = vec2.fromValues( position[0], position[1] );
+        this.radius = radius;
+        this.color = color;
+        this.type = CIRCLE_BODY;
+    }
+
+    this.particles = [];
+    this.particles.push(new Particle( [0.1,-0.4], 0.01 ));
+
+    this.collisionBodies = [];
+
+    this.collisionBodies.push(new Circle([0.0,0.2], 0.3, [1.0, 0.0, 0.0]));
+
+
+    console.log("new particle: ", this.particles);
+
 }
 
-Water.prototype.update = function (canvasWidth, canvasHeight) {
-
-    console.log("props: ", canvasWidth, canvasHeight);
-
+Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
@@ -48,11 +100,108 @@ Water.prototype.update = function (canvasWidth, canvasHeight) {
     this.uvBufferIndex = 0;
 
 
+    /*
+    Update particle forces(gravity)
+     */
+
+
+
+    /*
+    handle collision.
+     */
+
+    for(var i = 0; i < this.particles.length; ++i) {
+
+        var particle = this.particles[i];
+
+        var mass = 1.0;
+        var acceleration = [0, +9.82 * 0.0001];
+
+        vec2.scaleAndAdd(particle.position,  particle.position, particle.velocity, delta);
+        vec2.scaleAndAdd(particle.velocity,  particle.velocity, acceleration, delta);
+
+
+
+        // collision handling:
+        for(var i = 0; i < this.collisionBodies.length; ++i) {
+
+            var body = this.collisionBodies[i];
+
+            if(body.type == CIRCLE_BODY) {
+                // collision if F(X) <= 0
+                var x = particle.position;
+                var c = body.position;
+                var r = body.radius;
+                var scratch = vec2.create();
+
+                var x_sub_c = vec2.create();
+                vec2.subtract(x_sub_c,x,c);
+
+
+                var Fx = vec2.squaredLength(  x_sub_c  ) - r*r;
+
+                if(Fx <= 0) {
+
+                    // contact point
+                    var cp = vec2.create();
+
+                    // TODO: compute with r+ n*d, instead?
+                    vec2.scaleAndAdd(
+                        cp,
+
+                        c,
+
+                        x_sub_c, (r / vec2.length( x_sub_c  ) )   );
+
+                    var n = [0.0,0.0];
+                    vec2.scale(  n,  x_sub_c , -Math.sign(Fx) / ( vec2.length(x_sub_c)  )   )
+
+                    particle.position = cp;
+
+
+                    // also, reflect velocity.
+
+                    var cr = 0.01;
+
+                    vec2.subtract(
+                        particle.velocity,
+                        particle.velocity,
+                        vec2.scale(scratch, n , (1.0+cr) *  vec2.dot(particle.velocity, n) )
+                    );
+
+
+                }
+
+            }
+
+        }
+    }
+
+
+        /*
+        Create geometry.
+         */
+
     this._box([-0.35,-0.5], [0.70,0.9], [1.0, 1.0, 1.0] );
 
-    this._circle([0.0,0.2], 0.3, [1.0, 0.0, 0.0],20 );
 
-    this._circle([0.0,-0.4], 0.05, [0.0, 0.0, 1.0],20 );
+    for(var i = 0; i < this.collisionBodies.length; ++i) {
+
+        var body = this.collisionBodies[i];
+
+        if(body.type == CIRCLE_BODY)
+            this._circle(body.position, body.radius, body.color,40 );
+
+    }
+
+    for(var i = 0; i < this.particles.length; ++i) {
+
+        var particle = this.particles[i];
+
+        this._circle(particle.position, particle.radius, [0.0, 0.0, 1.0],40 );
+    }
+
+
 }
 
 
@@ -120,7 +269,7 @@ Water.prototype._addIndex = function (index) {
 Water.prototype._addPosition = function (position) {
 
     var x = ((position[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth-this.canvasHeight)/2.0;
-    var y = ((position[1] + 1) / 2.0) * this.canvasHeight;
+    var y = 1.0*(((position[1] + 1) / 2.0) * this.canvasHeight);
 
     this.positionBuffer[this.positionBufferIndex++] = x
     this.positionBuffer[this.positionBufferIndex++] = y;
@@ -240,3 +389,67 @@ Water.prototype._circle = function (centerPosition, radius, color, segments) {
 
 
 module.exports = Water;
+
+/*
+ http://prideout.net/blog/?p=58
+
+3D SPH rendering:
+ http://developer.download.nvidia.com/presentations/2010/gdc/Direct3D_Effects.pdf
+
+
+GPU gems 2D fluids:
+ http://meatfighter.com/fluiddynamics/GPU_Gems_Chapter_38.pdf
+
+
+SPH Study for integration in games:
+ http://www.roelezendam.com/Specialisation%20Thesis%20Final%20Roel%20Ezendam%20070254.pdf
+
+Original SPH article:
+ http://matthias-mueller-fischer.ch/publications/sca03.pdf
+
+ Siggraph course:
+ file:///Users/eric/Dropbox/backlog/fluids_notes.pdf
+
+ Japanese SPH article:
+ http://inf.ufrgs.br/cgi2007/cd_cgi/papers/harada.pdf
+
+SPH and euler tutorial:
+ http://cg.informatik.uni-freiburg.de/intern/seminar/gridFluids_fluid-EulerParticle.pdf
+
+Fluid flow for the rest of us:
+ http://cg.informatik.uni-freiburg.de/intern/seminar/gridFluids_fluid_flow_for_the_rest_of_us.pdf
+
+ 5.6.1
+
+ create n particles.
+ create collision objects.
+ initialize leap-frog integrator.(but initially, we may as well use
+ newton. )
+
+
+
+ 5.6.4
+ compute gravity force.
+
+
+
+ 5.6.5
+
+ F = f_internal + f_external
+ but it in will only be the gravity force, in our simplified case.
+
+ use leap-frog to advance particle velocity and position.
+
+
+ Perform collision detection against collision primitives using (4.33).
+ v. If a collision occurred then
+ a. Project particle position according to the contact point using (4.55).
+ b. Update the velocity using (4.58).
+ vi. Approximate the new particle velocity using
+
+
+ optimizeize v8:
+ https://www.youtube.com/watch?v=UJPdhx5zTaw
+ http://thibaultlaurens.github.io/javascript/2013/04/29/how-the-v8-engine-works/
+
+ */
