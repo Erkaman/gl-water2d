@@ -138,11 +138,12 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                 var x_sub_c = vec2.create();
                 vec2.subtract(x_sub_c,x,c);
 
+                var x_sub_c_len = vec2.length(x_sub_c);
+
 
                 var Fx = vec2.squaredLength(  x_sub_c  ) - r*r;
 
                 if(Fx <= 0) {
-
 
                     // contact point
                     var cp = vec2.create();
@@ -153,10 +154,10 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
                         c,
 
-                        x_sub_c, (r / vec2.length( x_sub_c  ) )   );
+                        x_sub_c, (r / x_sub_c_len )   );
 
                     var n = [0.0,0.0];
-                    vec2.scale(  n,  x_sub_c , -Math.sign(Fx) / ( vec2.length(x_sub_c)  )   )
+                    vec2.scale(  n,  x_sub_c , -Math.sign(Fx) / ( x_sub_c_len  )   )
 
                     particle.position = cp;
 
@@ -205,6 +206,9 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     }
 
 
+   // this.particles.push(new Particle( [0.1,-0.4], 0.01 ));
+
+    this._capsule ([0.1, 0.5], [0.9, -0.3], 0.1, [0,1,0], 30);
 }
 
 
@@ -356,6 +360,97 @@ Water.prototype._unitCircle = function (position, theta, radius) {
 };
 
 /*
+A capsule is defined by a line segment between p1 and p2, and a radius.
+ */
+Water.prototype._capsule = function (p1, p2, radius, color, segments) {
+
+    // direction vector the line segment.
+    var d = vec2.create();
+    vec2.subtract(d, p1, p2);
+
+    var theta = Math.atan2(d[1], d[0]) - Math.PI / 2.0;
+
+    // Draw the round parts at the end of the capsule.
+    this._arc(p1, radius, theta,color, segments);
+    this._arc(p2, radius, theta + Math.PI,color, segments);
+
+
+
+
+    // normal to line segment.
+    var n = [-d[1], d[0]];
+    vec2.normalize(n, n);
+
+    var scratch = [0.0,0.0];
+
+    var baseIndex = this.positionBufferIndex / 2;
+
+
+    var c = [color[0], color[1], color[2], alpha];
+
+    // vertex 1
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p1,  n, radius), c);
+
+    // vertex 2
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p2,  n, radius), c);
+
+    // vertex 3
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p1,  n, -radius), c);
+
+    // vertex 4
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p2,  n, -radius), c);
+
+
+    // triangle 1
+    this._addIndex(baseIndex + 2);
+    this._addIndex(baseIndex + 1);
+    this._addIndex(baseIndex + 0);
+
+
+    // triangle 2
+    this._addIndex(baseIndex + 1);
+    this._addIndex(baseIndex + 2);
+    this._addIndex(baseIndex + 3);
+
+
+}
+
+Water.prototype._arc = function (centerPosition, radius, direction, color, segments) {
+
+
+    var baseIndex = this.positionBufferIndex / 2;
+
+    var c = [color[0], color[1], color[2], 1.0];
+
+    // add center vertex.
+    this._coloredVertex(centerPosition, c);
+    var centerVertexIndex = baseIndex + 0;
+
+    var stepSize = (2 * Math.PI) / segments;
+    var curIndex = baseIndex + 1;
+    for (var theta = 0; theta <= Math.PI; theta += stepSize, ++curIndex) {
+
+        // for first iteration, we only create one vertex, and no triangles
+        if (theta == 0) {
+            var p =
+                [centerPosition[0] + radius * Math.cos(theta+direction), centerPosition[1] + radius * Math.sin(theta+direction)];
+
+            this._coloredVertex(p, c);
+        } else {
+            var p =
+                [centerPosition[0] + radius * Math.cos(theta+direction), centerPosition[1] + radius * Math.sin(theta+direction)];
+
+            this._coloredVertex(p, c);
+
+            this._addIndex(curIndex + 0);
+            this._addIndex(curIndex - 1);
+            this._addIndex(centerVertexIndex);
+        }
+    }
+};
+
+
+/*
  Render a circle, where the top-left corner of the circle is `position`
  Where `segments` is how many triangle segments the triangle is rendered with.
  */
@@ -369,7 +464,6 @@ Water.prototype._circle = function (centerPosition, radius, color, segments) {
     // add center vertex.
     this._coloredVertex(centerPosition, c);
     var centerVertexIndex = baseIndex + 0;
-
 
     var stepSize = (2 * Math.PI) / segments;
     var curIndex = baseIndex + 1;
