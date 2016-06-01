@@ -10,6 +10,7 @@
   "author": "Eric Arnebäck <arnebackeric@gmail.com> (https://github.com/Erkaman)",
   "license": "MIT",
   "devDependencies": {
+    "clamp": "^1.0.1",
     "gl-geometry": "^3.1.0",
     "gl-mat4": "^1.1.4",
     "gl-now": "^1.4.0",

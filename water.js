@@ -7,29 +7,30 @@ var createTexture = require('gl-texture2d');
 var createBuffer = require('gl-buffer');
 var vec3 = require('gl-vec3');
 var vec2 = require('gl-vec2');
+var clamp = require('clamp');
 
 var shaders = require("./shaders.js");
 
 
 /*
-Performance tips:
+ Performance tips:
 
-intiialize everythng in function object constructor. dont add objects after the fact
+ intiialize everythng in function object constructor. dont add objects after the fact
 
-initialize all array elements before using them.
+ initialize all array elements before using them.
 
-index arrsy from 0, to end array, otherwise, it may get switched to dictionary mode.
+ index arrsy from 0, to end array, otherwise, it may get switched to dictionary mode.
 
 
-use javscrpt smi, small integer.
+ use javscrpt smi, small integer.
 
-use int arrays.
+ use int arrays.
 
-double array unboxing.
+ double array unboxing.
 
-hidden classes.
+ hidden classes.
 
-monomorphic is better than polymorphic.
+ monomorphic is better than polymorphic.
  */
 
 
@@ -58,23 +59,23 @@ function Water(gl) {
 
     function Particle(position, radius) {
 
-        this.position = vec2.fromValues( position[0], position[1] );
+        this.position = vec2.fromValues(position[0], position[1]);
 
-        this.velocity = vec2.fromValues( 0,0 );
+        this.velocity = vec2.fromValues(0, 0);
         this.radius = radius;
     }
 
     function Circle(position, radius, color) {
-        this.position = vec2.fromValues( position[0], position[1] );
+        this.position = vec2.fromValues(position[0], position[1]);
         this.radius = radius;
         this.color = color;
         this.type = CIRCLE_BODY;
     }
 
-    function Capsule(p1, p2, radius, color) {
+    function Capsule(p0, p1, radius, color) {
 
-        this.p1 = vec2.fromValues( p1[0], p1[1] );
-        this.p2 = vec2.fromValues( p2[0], p2[1] );
+        this.p0 = vec2.fromValues(p0[0], p0[1]);
+        this.p1 = vec2.fromValues(p1[0], p1[1]);
 
         this.radius = radius;
         this.color = color;
@@ -83,23 +84,31 @@ function Water(gl) {
     }
 
     this.particles = [];
-    this.particles.push(new Particle( [0.1,-0.4], 0.01 ));
-    this.particles.push(new Particle( [-0.1,-0.4], 0.01 ));
+    this.particles.push(new Particle([0.1, -0.4], 0.01));
+    this.particles.push(new Particle([-0.1, -0.4], 0.01));
 
     this.collisionBodies = [];
 
-  //  this.collisionBodies.push(new Circle([0.0,0.2], 0.3, [1.0, 0.0, 0.0]));
-//    this.collisionBodies.push(new Capsule([-0.6, 0.5], [0.9, -0.1], 0.04, [0.0, 1.0, 0.0]));
+    this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [1.0, 0.0, 0.0]));
 
-    this.collisionBodies.push(new Capsule([-0.6, 0.1], [0.9, -0.1], 0.04, [0.0, 1.0, 0.0]));
+
+    const FRAME_RADIUS = 0.02;
+    // frame
+    this.collisionBodies.push(new Capsule([-0.35, -0.5], [+0.35, -0.5], FRAME_RADIUS, [0.0, 1.0, 0.0]));
+    this.collisionBodies.push(new Capsule([-0.35, +0.4], [+0.35, +0.4], FRAME_RADIUS, [0.0, 1.0, 0.0]));
+    this.collisionBodies.push(new Capsule([-0.35, -0.5], [-0.35, +0.4], FRAME_RADIUS, [0.0, 1.0, 0.0]));
+    this.collisionBodies.push(new Capsule([+0.35, -0.5], [+0.35, +0.4], FRAME_RADIUS, [0.0, 1.0, 0.0]));
+
+    this.collisionBodies.push(new Capsule([-0.25, +0.2], [+0.0, -0.0], FRAME_RADIUS, [0.0, 1.0, 0.0]));
+
 
 
 
     console.log("new particle: ", this.particles);
 
 
-
 }
+
 
 Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     this.canvasWidth = canvasWidth;
@@ -120,75 +129,107 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
     /*
-    Update particle forces(gravity)
+     Update particle forces(gravity)
      */
-
 
 
     /*
-    handle collision.
+     handle collision.
      */
 
-    for(var iParticle = 0; iParticle < this.particles.length; ++iParticle) {
+    for (var iParticle = 0; iParticle < this.particles.length; ++iParticle) {
 
         var particle = this.particles[iParticle];
 
         var mass = 1.0;
         var acceleration = [0, +9.82 * 0.0001];
 
-        vec2.scaleAndAdd(particle.position,  particle.position, particle.velocity, delta);
-        vec2.scaleAndAdd(particle.velocity,  particle.velocity, acceleration, delta);
-
+        vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, delta);
+        vec2.scaleAndAdd(particle.velocity, particle.velocity, acceleration, delta);
 
 
         // collision handling:
-        for(var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
+        for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
 
             var body = this.collisionBodies[iBody];
 
-            if(body.type == CIRCLE_BODY) {
-                // collision if F(X) <= 0
-                var x = particle.position;
+
+            var cr = 0.01;
+            var x = particle.position;
+            var scratch = vec2.create();
+
+
+            if (body.type == CIRCLE_BODY) {
                 var c = body.position;
                 var r = body.radius;
-                var scratch = vec2.create();
 
                 var x_sub_c = vec2.create();
-                vec2.subtract(x_sub_c,x,c);
+                vec2.subtract(x_sub_c, x, c);
 
-                var x_sub_c_len = vec2.length(x_sub_c);
+                var Fx = vec2.squaredLength(x_sub_c) - r * r;
 
+                // collision if F(X) <= 0
+                if (Fx <= 0) {
 
-                var Fx = vec2.squaredLength(  x_sub_c  ) - r*r;
+                    var x_sub_c_len = vec2.length(x_sub_c);
 
-                if(Fx <= 0) {
-
-                    // contact point
-                    var cp = vec2.create();
-
-                    // TODO: compute with r+ n*d, instead?
+                    // compute contact point
+                    var cp = [0.0, 0.0];
                     vec2.scaleAndAdd(
                         cp,
-
                         c,
+                        x_sub_c, (r / x_sub_c_len ));
 
-                        x_sub_c, (r / x_sub_c_len )   );
+                    // compute normal.
+                    var n = [0.0, 0.0];
+                    vec2.scale(n, x_sub_c, -Math.sign(Fx) / ( x_sub_c_len  ))
 
-                    var n = [0.0,0.0];
-                    vec2.scale(  n,  x_sub_c , -Math.sign(Fx) / ( x_sub_c_len  )   )
-
+                    // update particle due to collision
                     particle.position = cp;
+                    this._reflect(particle.velocity, n);
+
+                }
+
+            } else if (body.type == CAPSULE_BODY) {
+                var p0 = body.p0;
+                var p1 = body.p1;
+                var r = body.radius;
 
 
-                    // also, reflect velocity.
+                var p1_sub_p0 = [0.0, 0.0];
+                vec2.subtract(p1_sub_p0, p1, p0);
 
-                    var cr = 0.01;
+                var t = -vec2.dot(vec2.subtract(scratch, p0, x), p1_sub_p0) / vec2.dot(p1_sub_p0, p1_sub_p0);
+                t = clamp(t, 0.0, 1.0);
 
-                    vec2.subtract(
-                        particle.velocity,
-                        particle.velocity,
-                        vec2.scale(scratch, n , (1.0+cr) *  vec2.dot(particle.velocity, n) )
-                    );
+
+                var q = [0.0, 0.0];
+                vec2.scaleAndAdd(q, p0, p1_sub_p0, t);
+
+                var Fx = vec2.length(vec2.subtract(scratch, q, x)) - r;
+
+                // check if collision
+                if(Fx <= 0) {
+
+
+                    var x_sub_q = [0.0, 0.0];
+                    vec2.subtract(x_sub_q, x, q);
+                    var x_sub_q_len = vec2.length(x_sub_q);
+
+                    // compute contact point
+                    var cp = [0.0, 0.0];
+                    vec2.scaleAndAdd(
+                        cp,
+                        q,
+                        x_sub_q, (r / x_sub_q_len ));
+
+                    // compute normal.
+                    var n = [0.0, 0.0];
+                    vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
+
+                    // update particle due to collision
+                    particle.position = cp;
+                    this._reflect(particle.velocity, n);
                 }
 
             }
@@ -198,37 +239,37 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     }
 
 
-        /*
-        Create geometry.
-         */
+    /*
+     Create geometry.
+     */
 
-    this._box([-0.35,-0.5], [0.70,0.9], [1.0, 1.0, 1.0] );
+    this._box([-0.35, -0.5], [0.70, 0.9], [1.0, 1.0, 1.0]);
 
 
-    for(var i = 0; i < this.collisionBodies.length; ++i) {
+    for (var i = 0; i < this.collisionBodies.length; ++i) {
 
         var body = this.collisionBodies[i];
 
-        if(body.type == CIRCLE_BODY)
-            this._circle(body.position, body.radius, body.color,40 );
-        else if(body.type == CAPSULE_BODY)
-            this._capsule(body.p1, body.p2, body.radius, body.color,40 );
+        if (body.type == CIRCLE_BODY)
+            this._circle(body.position, body.radius, body.color, 40);
+        else if (body.type == CAPSULE_BODY)
+            this._capsule(body.p0, body.p1, body.radius, body.color, 40);
     }
 
-    for(var i = 0; i < this.particles.length; ++i) {
+    for (var i = 0; i < this.particles.length; ++i) {
 
         var particle = this.particles[i];
 
-        this._circle(particle.position, particle.radius, [0.0, 0.0, 1.0],40 );
+        this._circle(particle.position, particle.radius, [0.0, 0.0, 1.0], 40);
     }
 }
 
 
 Water.prototype.draw = function (gl) {
-    gl.clearColor(0,0,0, 1);
+    gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.viewport(0, 0, this.canvasWidth, this.canvasHeight);
-    
+
     /*
      If a VAO is already bound, we need to unbound it. Otherwise, we will write into a VAO created by the user of the library
      when calling vertexAttribPointer, which means that we would effectively corrupt the user data!
@@ -236,7 +277,6 @@ Water.prototype.draw = function (gl) {
     var VAO_ext = gl.getExtension('OES_vertex_array_object');
     if (VAO_ext)
         VAO_ext.bindVertexArrayOES(null);
-
 
 
     this.positionBufferObject.update(this.positionBuffer);
@@ -271,7 +311,7 @@ Water.prototype.draw = function (gl) {
 
     gl.disable(gl.DEPTH_TEST) // no depth testing; we handle this by manually placing out
     // widgets in the order we wish them to be rendered.
-    
+
     // for text rendering, enable alpha blending.
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -287,8 +327,8 @@ Water.prototype._addIndex = function (index) {
 
 Water.prototype._addPosition = function (position) {
 
-    var x = ((position[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth-this.canvasHeight)/2.0;
-    var y = 1.0*(((position[1] + 1) / 2.0) * this.canvasHeight);
+    var x = ((position[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
+    var y = 1.0 * (((position[1] + 1) / 2.0) * this.canvasHeight);
 
     this.positionBuffer[this.positionBufferIndex++] = x
     this.positionBuffer[this.positionBufferIndex++] = y;
@@ -372,7 +412,7 @@ Water.prototype._unitCircle = function (position, theta, radius) {
 };
 
 /*
-A capsule is defined by a line segment between p1 and p2, and a radius.
+ A capsule is defined by a line segment between p1 and p2, and a radius.
  */
 Water.prototype._capsule = function (p1, p2, radius, color, segments) {
 
@@ -383,17 +423,15 @@ Water.prototype._capsule = function (p1, p2, radius, color, segments) {
     var theta = Math.atan2(d[1], d[0]) - Math.PI / 2.0;
 
     // Draw the round parts at the end of the capsule.
-    this._arc(p1, radius, theta,color, segments);
-    this._arc(p2, radius, theta + Math.PI,color, segments);
-
-
+    this._arc(p1, radius, theta, color, segments);
+    this._arc(p2, radius, theta + Math.PI, color, segments);
 
 
     // normal to line segment.
     var n = [-d[1], d[0]];
     vec2.normalize(n, n);
 
-    var scratch = [0.0,0.0];
+    var scratch = [0.0, 0.0];
 
     var baseIndex = this.positionBufferIndex / 2;
 
@@ -401,16 +439,16 @@ Water.prototype._capsule = function (p1, p2, radius, color, segments) {
     var c = [color[0], color[1], color[2], alpha];
 
     // vertex 1
-    this._coloredVertex(vec3.scaleAndAdd(scratch, p1,  n, radius), c);
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p1, n, radius), c);
 
     // vertex 2
-    this._coloredVertex(vec3.scaleAndAdd(scratch, p2,  n, radius), c);
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p2, n, radius), c);
 
     // vertex 3
-    this._coloredVertex(vec3.scaleAndAdd(scratch, p1,  n, -radius), c);
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p1, n, -radius), c);
 
     // vertex 4
-    this._coloredVertex(vec3.scaleAndAdd(scratch, p2,  n, -radius), c);
+    this._coloredVertex(vec3.scaleAndAdd(scratch, p2, n, -radius), c);
 
 
     // triangle 1
@@ -445,12 +483,12 @@ Water.prototype._arc = function (centerPosition, radius, direction, color, segme
         // for first iteration, we only create one vertex, and no triangles
         if (theta == 0) {
             var p =
-                [centerPosition[0] + radius * Math.cos(theta+direction), centerPosition[1] + radius * Math.sin(theta+direction)];
+                [centerPosition[0] + radius * Math.cos(theta + direction), centerPosition[1] + radius * Math.sin(theta + direction)];
 
             this._coloredVertex(p, c);
         } else {
             var p =
-                [centerPosition[0] + radius * Math.cos(theta+direction), centerPosition[1] + radius * Math.sin(theta+direction)];
+                [centerPosition[0] + radius * Math.cos(theta + direction), centerPosition[1] + radius * Math.sin(theta + direction)];
 
             this._coloredVertex(p, c);
 
@@ -461,6 +499,19 @@ Water.prototype._arc = function (centerPosition, radius, direction, color, segme
     }
 };
 
+
+// reflect(particle.velocity, n
+Water.prototype._reflect = function(v, n) {
+    var scratch = [0.0,0.0];
+
+    var cr = 0.01;
+    vec2.subtract(
+        v,
+        v,
+        vec2.scale(scratch, n, (1.0 + cr) * vec2.dot(v, n))
+    );
+
+}
 
 /*
  Render a circle, where the top-left corner of the circle is `position`
@@ -502,18 +553,18 @@ module.exports = Water;
 /*
  http://prideout.net/blog/?p=58
 
-3D SPH rendering:
+ 3D SPH rendering:
  http://developer.download.nvidia.com/presentations/2010/gdc/Direct3D_Effects.pdf
 
 
-GPU gems 2D fluids:
+ GPU gems 2D fluids:
  http://meatfighter.com/fluiddynamics/GPU_Gems_Chapter_38.pdf
 
 
-SPH Study for integration in games:
+ SPH Study for integration in games:
  http://www.roelezendam.com/Specialisation%20Thesis%20Final%20Roel%20Ezendam%20070254.pdf
 
-Original SPH article:
+ Original SPH article:
  http://matthias-mueller-fischer.ch/publications/sca03.pdf
 
  Siggraph course:
@@ -522,10 +573,10 @@ Original SPH article:
  Japanese SPH article:
  http://inf.ufrgs.br/cgi2007/cd_cgi/papers/harada.pdf
 
-SPH and euler tutorial:
+ SPH and euler tutorial:
  http://cg.informatik.uni-freiburg.de/intern/seminar/gridFluids_fluid-EulerParticle.pdf
 
-Fluid flow for the rest of us:
+ Fluid flow for the rest of us:
  http://cg.informatik.uni-freiburg.de/intern/seminar/gridFluids_fluid_flow_for_the_rest_of_us.pdf
 
  5.6.1
