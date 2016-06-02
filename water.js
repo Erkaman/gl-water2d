@@ -38,6 +38,38 @@ var shaders = require("./shaders.js");
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
 
+// support radius.
+var h = 0.0;
+
+function wDefault(r) {
+
+    var r_dot_r = vec2.dot(r,r);
+    var h2 = h*h;
+
+    if( r_dot_r > h2  ) {
+     //   console.log("ZERO");
+        return 0; // outside support radius.
+    }
+
+    var f = 315.0 / (64 * Math.PI * Math.pow(h, 9));
+
+    return  Math.pow(h2 - r_dot_r , 3.0);
+}
+
+function wPressureGradient(r) {
+
+    var r_len = vec2.length(r);
+
+    if( r_len > h  ) {
+        return 0; // outside support radius.
+    }
+
+    var f = -45.0 / (Math.PI * Math.pow(h, 6)) * Math.pow(h - r_len,2) *  (1.0 / r_len);
+
+    return [ r[0] * f, r[1] * f ];
+}
+
+
 /*
  Constructor
  */
@@ -57,12 +89,17 @@ function Water(gl) {
     this.indexBufferObject = createBuffer(gl, [], gl.ELEMENT_ARRAY_BUFFER, gl.DYNAMIC_DRAW);
 
 
-    function Particle(position, radius) {
+    function Particle(position, radius, mass) {
 
         this.position = vec2.fromValues(position[0], position[1]);
 
-        this.velocity = vec2.fromValues(0, 0);
+        this.velocity = vec2.fromValues(0.0, 0.0);
         this.radius = radius;
+        this.mass = mass;
+        this.rho = 0.0;
+        this.density = 0.0;
+        this.pressure = 0.0;
+
     }
 
     function Circle(position, radius, color) {
@@ -86,16 +123,43 @@ function Water(gl) {
     this.particles = [];
 
 
-    for(var i = -0.3; i < 0.3; i += 0.05) {
-        this.particles.push(new Particle([i, -0.4], 0.01));
+    var V = (0.35 - 0.15)*(0.3-0.1)
+    var water_rho = 1000;
+    var numParticles = 56;
 
+    // how many particles are affected by the support radius.(5.14)
+    var supportCount = 15;
+
+
+
+    h = Math.pow( (V * supportCount) / ( Math.PI * numParticles ) , 1/2);
+
+    console.log("h: ", h);
+
+    for(var y = 0.15; y < 0.35; y += 0.025) {
+
+        for (var x = 0.1; x < 0.3; x += 0.03) {
+
+            // rho = 1000
+            // n = 56
+            // (A * rho) / n = mass = 7.1
+
+            var mass = (V * water_rho) / numParticles;
+          //  console.log("mass: ", mass);
+
+            this.particles.push(new Particle([x, y], 0.01, 7.1));
+        }
     }
+   // console.log("count: ", this.particles.length);
+
+
+
 
 //    this.particles.push(new Particle([-0.1, -0.4], 0.01));
 
     this.collisionBodies = [];
 
-    this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [0.7, 0.2, 0.2]));
+    //this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [0.7, 0.2, 0.2]));
 
 
     const FRAME_RADIUS = 0.03;
@@ -107,7 +171,11 @@ function Water(gl) {
     this.collisionBodies.push(new Capsule([-0.35, -0.5], [-0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
     this.collisionBodies.push(new Capsule([+0.35, -0.5], [+0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
 
-    this.collisionBodies.push(new Capsule([-0.25, +0.2], [+0.0, -0.0], FRAME_RADIUS, [0.0, 1.0, 0.0]));
+
+    this.collisionBodies.push(new Capsule([+0.05, 0.0], [+0.05, +0.4], FRAME_RADIUS, FRAME_COLOR));
+
+
+    //this.collisionBodies.push(new Capsule([-0.25, +0.2], [+0.0, -0.0], FRAME_RADIUS, [0.0, 1.0, 0.0]));
 
 
 
@@ -116,6 +184,8 @@ function Water(gl) {
 
 
 }
+
+var firstTime = true;
 
 
 Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
@@ -136,20 +206,90 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     this.uvBufferIndex = 0;
 
 
-    /*
-     Update particle forces(gravity)
-     */
+   // if(firstTime) {
+       // console.log("begin");
 
 
-    /*
-     handle collision.
-     */
+        // compute mass density.
+        for (var i = 0; i < this.particles.length; ++i) {
+
+            var iParticle = this.particles[i];
+
+            var sum = 0.0;
+
+            for (var j = 0; j < this.particles.length; ++j) {
+
+                var jParticle = this.particles[j];
+
+                var diff = [0.0, 0.0];
+                vec2.subtract(diff, iParticle.position, jParticle.position);
+
+                var w = wDefault(diff);
+              //  console.log("w ", w);
+
+                sum += w * jParticle.mass;
+            }
+
+          //  console.log("density: ", sum);
+            iParticle.density = sum;
+
+            iParticle.pressure =gasStiffness * ( iParticle.density  - restDensity );
+
+            var restDensity = 0.03;
+            var gasStiffness = 3;
+
+
+            // use density to compute pressure.
+
+        }
+        //console.log("end");
+
+   // }
+    firstTime = false;
+
+
+
 
     for (var iParticle = 0; iParticle < this.particles.length; ++iParticle) {
 
         var particle = this.particles[iParticle];
 
-        var mass = 1.0;
+        // particle mass is fixed.
+
+        // compute density with equation (4.6)
+
+
+        // internal forces.
+        var fInternal = 0;
+
+        // use equation 4.10 to do pressure.
+
+
+        // external forces.
+
+        var fGravity = [0, particle.density * +9.82 * 0.0001];
+        var fExternal = fGravity;
+
+        // total force.
+        var F = fExternal + fInternal;
+
+        //console.log("F: ", F);
+      //  console.log("desntity: ", particle.density  );
+
+        //var acceleration = [   F[0]/particle.density, F[1]/particle.density  ];
+
+       // console.log("acc: ", acceleration );
+
+        // f_gravity = density_i * g
+        // f_external = f_gravity
+
+        // Fi = f_interval + f_external
+        // compute a_i(acceleration) using 4.2. So (Fi / density_i)
+        //
+
+       // var mass = 1.0;
+
+        // then add F/rho here.
         var acceleration = [0, +9.82 * 0.0001];
 
         vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, delta);
