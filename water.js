@@ -10,6 +10,9 @@ var vec2 = require('gl-vec2');
 var clamp = require('clamp');
 
 var shaders = require("./shaders.js");
+var SpatialHash = require("./spatial_hash.js");
+
+
 
 
 /*
@@ -60,8 +63,9 @@ function wPressureGradient(r) {
 
     var r_len = vec2.length(r);
 
+
     if( r_len > h  ) {
-        return 0; // outside support radius.
+        return [0.0, 0.0]; // outside support radius.
     }
 
     var f = -45.0 / (Math.PI * Math.pow(h, 6)) * Math.pow(h - r_len,2) *  (1.0 / r_len);
@@ -74,6 +78,7 @@ function wPressureGradient(r) {
  Constructor
  */
 function Water(gl) {
+
 
     /*
      We use this single shader to render the GUI.
@@ -123,22 +128,24 @@ function Water(gl) {
     this.particles = [];
 
 
-    var V = (0.35 - 0.15)*(0.3-0.1)
-    var water_rho = 1000;
-    var numParticles = 56;
+
+
+    var V = (0.35 - 0.11)*(0.3-0.1)
+    var water_rho = 1000000;
+    var numParticles = 304;
 
     // how many particles are affected by the support radius.(5.14)
     var supportCount = 15;
-
 
 
     h = Math.pow( (V * supportCount) / ( Math.PI * numParticles ) , 1/2);
 
     console.log("h: ", h);
 
-    for(var y = 0.15; y < 0.35; y += 0.025) {
+    /*
+    for(var y = 0.11; y < 0.35; y += 0.013) {
 
-        for (var x = 0.1; x < 0.3; x += 0.03) {
+        for (var x = 0.1; x < 0.3; x += 0.013) {
 
             // rho = 1000
             // n = 56
@@ -147,10 +154,12 @@ function Water(gl) {
             var mass = (V * water_rho) / numParticles;
           //  console.log("mass: ", mass);
 
-            this.particles.push(new Particle([x, y], 0.01, 7.1));
+            this.particles.push(new Particle([x, y], 0.006, 700000.1));
         }
     }
-   // console.log("count: ", this.particles.length);
+    */
+    this.particles.push(new Particle([0.11, 0.1], 0.006, 700000.1));
+    console.log("particle count: ", this.particles.length);
 
 
 
@@ -165,11 +174,23 @@ function Water(gl) {
     const FRAME_RADIUS = 0.03;
     const FRAME_COLOR = [0,0.5,0];
 
+    var WORLD_MIN = [-0.35,-0.5];
+    var WORLD_MAX = [+0.35,+0.4];
+
+
     // frame
-    this.collisionBodies.push(new Capsule([-0.35, -0.5], [+0.35, -0.5], FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([-0.35, +0.4], [+0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([-0.35, -0.5], [-0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([+0.35, -0.5], [+0.35, +0.4], FRAME_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule(WORLD_MIN,[WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([WORLD_MIN[0], WORLD_MAX[1] ],WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule(WORLD_MIN,[WORLD_MIN[0], WORLD_MAX[1] ], FRAME_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1] ],WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
+
+    this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
+    this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
+
+    console.log("grids x: ",   (WORLD_MAX[0] - WORLD_MIN[0]) / h );
+    console.log("grids y: ",   (WORLD_MAX[1] - WORLD_MIN[1]) / h );
+
+
 
 
     this.collisionBodies.push(new Capsule([+0.05, 0.0], [+0.05, +0.4], FRAME_RADIUS, FRAME_COLOR));
@@ -183,9 +204,32 @@ function Water(gl) {
     console.log("new particle: ", this.particles);
 
 
+   // this.hash =new  SpatialHash(0.5,  [1.5,1.5], [3.5,3.5] );
+    console.log("h: ", h);
+    this.hash =new  SpatialHash(h,  WORLD_MIN, WORLD_MAX );
+
+
+
+  //  console.log("part: ", this.particles[7]);
+
+
+
+   // console.log("grid pos " , (this.hash._toGridPos([0.30, 0.39])));
+
+
+/*
+    console.log("grid pos " , this.hash._toIndex(this.hash._toGridPos([2.25, 2.75])));
+
+    console.log("grid pos " , this.hash._toIndex(this.hash._toGridPos([3.3, 3.3])));
+
+    console.log("grid pos " , this.hash._toIndex(this.hash._toGridPos([3.3, 1.7])));
+*/
+
+
 }
 
 var firstTime = true;
+var firstTime2 = true;
 
 
 Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
@@ -205,9 +249,12 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     this.colorBufferIndex = 0;
     this.uvBufferIndex = 0;
 
+    this.hash.update(this.particles);
 
-   // if(firstTime) {
-       // console.log("begin");
+
+
+    if(firstTime) {
+         console.log("begin");
 
 
         // compute mass density.
@@ -217,9 +264,13 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
             var sum = 0.0;
 
-            for (var j = 0; j < this.particles.length; ++j) {
+            var nearParticles = this.hash.getNearParticles(iParticle);
 
-                var jParticle = this.particles[j];
+
+
+            for (var j = 0; j < nearParticles.length; ++j) {
+
+                var jParticle = nearParticles[j];
 
                 var diff = [0.0, 0.0];
                 vec2.subtract(diff, iParticle.position, jParticle.position);
@@ -230,45 +281,96 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                 sum += w * jParticle.mass;
             }
 
-          //  console.log("density: ", sum);
+
+
             iParticle.density = sum;
+            //console.log("density: ", sum);
 
-            iParticle.pressure =gasStiffness * ( iParticle.density  - restDensity );
-
-            var restDensity = 0.03;
+            var restDensity = 0.0002;
             var gasStiffness = 3;
 
+            iParticle.pressure =gasStiffness * ( iParticle.density  - restDensity );
+            //console.log("pressure: ",  iParticle.pressure);
 
-            // use density to compute pressure.
 
         }
-        //console.log("end");
 
-   // }
+        console.log("end");
+
+    }
     firstTime = false;
 
 
 
 
-    for (var iParticle = 0; iParticle < this.particles.length; ++iParticle) {
+    for (var i = 0; i < this.particles.length; ++i) {
 
-        var particle = this.particles[iParticle];
-
-        // particle mass is fixed.
-
-        // compute density with equation (4.6)
+        var iParticle = this.particles[i];
 
 
-        // internal forces.
-        var fInternal = 0;
 
         // use equation 4.10 to do pressure.
+        var fPressure;
+        
+        // pressure
+        if(firstTime2 && i < 10) {
+
+
+
+            var nearParticles = this.hash.getNearParticles(iParticle);
+
+            var sum = [0.0, 0.0];
+            for (var j = 0; j < nearParticles.length; ++j) {
+
+                if (j == i)
+                    continue; // don't do pressure on yourself!
+
+                var jParticle = this.particles[j];
+
+
+                var scale = (
+                        iParticle.pressure / (iParticle.density * iParticle.density) +
+                        jParticle.pressure / (jParticle.density * jParticle.density)
+                    ) * jParticle.mass;
+
+                var diff = [0.0, 0.0];
+                vec2.subtract(diff, iParticle.position, jParticle.position);
+                var w = wPressureGradient(diff);
+
+
+                /*
+                console.log("jParticle.mass: ", jParticle.mass );
+
+                console.log("scale: ", scale );
+                console.log("w: ", w );
+                console.log("sum: ", sum );
+                */
+
+                vec2.scaleAndAdd(sum, sum, w, scale);
+            }
+            vec2.scale(sum, sum, -iParticle.density);
+
+            fPressure = [sum[0], sum[1]];
+
+
+            console.log("total pressure: ", [ fPressure[0]/iParticle.density, fPressure[1] /iParticle.density   ] );
+
+
+        }
+
+
+
+
+            // internal forces.
+        var fInternal = fPressure;
+
 
 
         // external forces.
 
-        var fGravity = [0, particle.density * +9.82 * 0.0001];
+        var fGravity = [0, iParticle.density * +9.82 * 0.0001];
         var fExternal = fGravity;
+
 
         // total force.
         var F = fExternal + fInternal;
@@ -292,8 +394,11 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         // then add F/rho here.
         var acceleration = [0, +9.82 * 0.0001];
 
-        vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, delta);
-        vec2.scaleAndAdd(particle.velocity, particle.velocity, acceleration, delta);
+
+       // acceleration[1] = 0.0;
+
+        vec2.scaleAndAdd(iParticle.position, iParticle.position, iParticle.velocity, delta);
+        vec2.scaleAndAdd(iParticle.velocity, iParticle.velocity, acceleration, delta);
 
 
         // collision handling:
@@ -303,7 +408,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
             var cr = 0.01;
-            var x = particle.position;
+            var x = iParticle.position;
             var scratch = vec2.create();
 
 
@@ -333,8 +438,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                     vec2.scale(n, x_sub_c, -Math.sign(Fx) / ( x_sub_c_len  ))
 
                     // update particle due to collision
-                    particle.position = cp;
-                    this._reflect(particle.velocity, n);
+                    iParticle.position = cp;
+                    this._reflect(iParticle.velocity, n);
 
                 }
 
@@ -376,8 +481,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                     vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
 
                     // update particle due to collision
-                    particle.position = cp;
-                    this._reflect(particle.velocity, n);
+                    iParticle.position = cp;
+                    this._reflect(iParticle.velocity, n);
                 }
 
             }
@@ -385,6 +490,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         }
 
     }
+    firstTime2 = false;
+
 
 
     /*
@@ -759,5 +866,8 @@ module.exports = Water;
  optimizeize v8:
  https://www.youtube.com/watch?v=UJPdhx5zTaw
  http://thibaultlaurens.github.io/javascript/2013/04/29/how-the-v8-engine-works/
+
+ masters thesis:
+ http://image.diku.dk/projects/media/kelager.06.pdf
 
  */

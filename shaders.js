@@ -1,6 +1,4 @@
-/**
- * Created by eric on 23/04/16.
- */
+
 
 module.exports.vert = `
 precision mediump float;

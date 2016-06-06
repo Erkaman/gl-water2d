@@ -18,7 +18,8 @@
     "gl-vec2": "^1.0.0",
     "gl-vec3": "^1.0.3",
     "glslify": "^5.0.2",
-    "pnp-gui": "0.0.3"
+    "pnp-gui": "0.0.3",
+    "sieve": "0.0.4"
   },
   "dependencies": {},
   "directories": {
