@@ -12,29 +12,6 @@ var clamp = require('clamp');
 var shaders = require("./shaders.js");
 var SpatialHash = require("./spatial_hash.js");
 
-
-/*
- Performance tips:
-
- intiialize everythng in function object constructor. dont add objects after the fact
-
- initialize all array elements before using them.
-
- index arrsy from 0, to end array, otherwise, it may get switched to dictionary mode.
-
-
- use javscrpt smi, small integer.
-
- use int arrays.
-
- double array unboxing.
-
- hidden classes.
-
- monomorphic is better than polymorphic.
- */
-
-
 // collision body types:
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
@@ -70,7 +47,6 @@ function wDefault(r) {
     }
 
 
-
     var f = 315.0 / (64.0 * Math.PI * Math.pow(h, 9));
 
     return Math.pow(h2 - r_dot_r, 3.0);
@@ -80,20 +56,10 @@ function wPressureGradient(r) {
 
     var r_len = vec2.length(r);
 
-
-    if (r_len > h) {
+    if (r_len > h || r_len == 0.0) {
         return [0.0, 0.0]; // outside support radius.
     }
-
-
-    var f;
-    if(r_len ==0.0) {
-        f = -45.0 / (Math.PI * Math.pow(h, 6));
-    } else {
-        f = -45.0 / (Math.PI * Math.pow(h, 6)) * Math.pow(h - r_len, 2) * (1.0 / r_len);
-
-    }
-
+    var f = -45.0 / (Math.PI * Math.pow(h, 6)) * Math.pow(h - r_len, 2) * (1.0 / r_len);
 
     return [r[0] * f, r[1] * f];
 }
@@ -208,78 +174,18 @@ function Water(gl) {
     this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
     this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
 
-    console.log("grids x: ", (WORLD_MAX[0] - WORLD_MIN[0]) / h);
-    console.log("grids y: ", (WORLD_MAX[1] - WORLD_MIN[1]) / h);
-
-
     this.collisionBodies.push(new Capsule([+0.05, 0.0], [+0.05, +0.4], FRAME_RADIUS, FRAME_COLOR));
 
-
-    //this.collisionBodies.push(new Capsule([-0.25, +0.2], [+0.0, -0.0], FRAME_RADIUS, [0.0, 1.0, 0.0]));
-
-
-    console.log("new particle: ", this.particles);
-
-
-    // this.hash =new  SpatialHash(0.5,  [1.5,1.5], [3.5,3.5] );
-    console.log("h: ", h);
-
-    // TODO: we need to use scaled min and max here!
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
-
-
-    //  console.log("part: ", this.particles[7]);
-
-
-    // console.log("grid pos " , (this.hash._toGridPos([0.30, 0.39])));
-
-
-    /*
-     console.log("grid pos " , this.hash._toIndex(this.hash._toGridPos([2.25, 2.75])));
-
-     console.log("grid pos " , this.hash._toIndex(this.hash._toGridPos([3.3, 3.3])));
-
-     console.log("grid pos " , this.hash._toIndex(this.hash._toGridPos([3.3, 1.7])));
-     */
-
-
-    this.hash.update(this.particles);
-
-    // console.log("near: ", this.hash.getNearParticles(this.particles[8]).length );
-
-
-      console.log("ppppppppp:  ",  wPressureGradient( [0.0000000001, 0.0000000001] )  );
-
-
-    // console.log("real pressure:  ",  45 / (  Math.PI* Math.pow(h,6)  )  );
-
-    //  console.log("near: ", this.hash.getNearParticles2(this.particles[8]).length );
-
 }
-
-var firstTime = true;
-var firstTime2 = true;
-
-var total = 0;
 
 
 Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
-    total += delta;
-
-    if (total > 60) {
-        //  console.log("FIVE PASSED");
-    }
-
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
-
     this.hash.update(this.particles);
-
-
-    //if(firstTime) {console.log("begin");
-
 
     // compute mass density.
     for (var i = 0; i < this.particles.length; ++i) {
@@ -304,29 +210,18 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         }
 
         iParticle.density = sum;
-       // console.log("density: ", sum);
-
 
         iParticle.pressure = gasStiffness * ( iParticle.density - restDensity );
-        //console.log("pressure: ", iParticle.pressure);
 
 
     }
-
-    //console.log("end"); }firstTime = false;
-
 
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
 
-
         // use equation 4.10 to do pressure.
         var fPressure = [0.0, 0.0];
-
-
-        // pressure
-        // if(firstTime2 && i < 20) {
 
 
         var nearParticles = this.hash.getNearParticles(iParticle);
@@ -349,15 +244,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             vec2.subtract(diff, iParticle.position, jParticle.position);
             var w = wPressureGradient(diff);
 
-            /*
-            if(isNaN(w[0])) {
-                console.log("NAN w");
-            }
-            */
-
 
             vec2.scaleAndAdd(sum, sum, w, scale);
-
 
 
         }
@@ -365,36 +253,19 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
         fPressure = [sum[0], sum[1]];
 
-
-        // console.log("total pressure: ", fPressure );
-
-
-        //  }
-
-
         // internal forces.
         var fInternal = fPressure;
 
-        // fInternal = [0.0, 0.0];
-
-
         // external forces.
-
         var fGravity = [0, gravity * iParticle.density];
         var fExternal = fGravity;
 
-
         // total force.
-//        var F = fExternal + fInternal;
         var F = [0.0, 0.0];
         vec2.add(F, fExternal, fInternal);
 
 
-        // then add F/rho here.
         var acceleration = [F[0] / iParticle.density, F[1] / iParticle.density];
-        // var acceleration = [0.0, 9.82];
-        // console.log("gravity: ", fGravity );
-        // console.log("acceleration: ", acceleration);
 
 
         var prev = isNaN(iParticle.position[0]);
@@ -404,9 +275,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         vec2.scaleAndAdd(iParticle.velocity, iParticle.velocity, acceleration, delta);
         vec2.scaleAndAdd(iParticle.position, iParticle.position, iParticle.velocity, delta);
 
-
-
-        if(!prev && isNaN(iParticle.position[0])) {
+        if (!prev && isNaN(iParticle.position[0])) {
             console.log("particle pos is NAN");
             console.log("F", F);
 
@@ -420,8 +289,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             console.log("part_vel: ", iParticle.velocity);
 
         }
-
-
 
         // collision handling:
         for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
@@ -466,7 +333,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                     this._reflect(iParticle.velocity, n);
 
 
-                    if(!prev && isNaN(iParticle.position[0])) {
+                    if (!prev && isNaN(iParticle.position[0])) {
                         console.log("pos nan due to circle coll");
                     }
 
@@ -516,7 +383,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                     iParticle.position = cp;
                     this._reflect(iParticle.velocity, n);
 
-                    if(!prev && isNaN(iParticle.position[0])) {
+                    if (!prev && isNaN(iParticle.position[0])) {
                         console.log("pos nan due to capsule coll");
                     }
                 }
@@ -526,8 +393,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         }
 
     }
-    firstTime2 = false;
-
 
 }
 
