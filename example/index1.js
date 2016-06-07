@@ -32,12 +32,28 @@ shell.on("gl-init", function () {
 
 });
 
+var total = 0;
+
+shell.on("tick", function () {
+    /*total += 0.033;
+    
+    if(total > 10.0) {
+        console.log("555555: ");
+    }*/
+    var canvas = shell.canvas;
+
+    water.update(canvas.width, canvas.height, 0.033);
+
+    
+
+});
+
+
 shell.on("gl-render", function (t) {
     var gl = shell.gl;
     var canvas = shell.canvas;
 
 
-    water.update(canvas.width, canvas.height, t);
 
     water.draw(gl);
     

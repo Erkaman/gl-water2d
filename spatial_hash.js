@@ -38,8 +38,6 @@ function SpatialHash(h, min, max) {
 
 
     console.log("table size: ", this.xSize, this.ySize);
-
-
 }
 
 
@@ -85,6 +83,43 @@ SpatialHash.prototype.update = function (particles) {
 
 };
 
+/*
+// get particles that are within the support radius of the particle.
+SpatialHash.prototype.getNearParticles2 = function (particle) {
+
+
+    var scratch = [0.0, 0.0];
+
+    var nearParticles = [];
+    for(var x = 0; x < this.xSize; ++x) {
+        for (var y = 0; y < this.ySize; ++y) {
+
+            var cellParticles = this.grid[this._toIndex([x, y])];
+
+
+            for(var i = 0; i < cellParticles.length; ++i) {
+                var p = cellParticles[i];
+
+                var d = vec2.length(  vec2.subtract(scratch, particle.position,p.position )  );
+                if(d < this.h) {
+                    //     console.log("add ", p.position);
+                    nearParticles.push(p);
+                } else {
+                    //     console.log("skip ", p.position);
+                }
+
+            }
+
+
+        }
+    }
+
+    return nearParticles;
+
+
+}
+*/
+
 // get particles that are within the support radius of the particle.
 SpatialHash.prototype.getNearParticles = function (particle) {
     // find bounding box that contains the support radius.
@@ -96,11 +131,7 @@ SpatialHash.prototype.getNearParticles = function (particle) {
     var xMax = bbMax[0];
     var yMax = bbMax[1];
 
-/*
-    console.log("bb: ", bbMin, bbMax);
-    console.log("particle: ", particle.position);
-    console.log("h: ", this.h);
-*/
+
     var nearParticles = [];
 
     var scratch = [0.0, 0.0];
