@@ -62,6 +62,7 @@ SpatialHash.prototype.update = function (particles) {
     // initialize grid.
     for(var i = 0; i < this.xSize*this.ySize; ++i) {
         this.grid[i] = [];
+     //   console.log("rgrid length: ",  this.grid[i].length );
     }
 
 
@@ -70,9 +71,31 @@ SpatialHash.prototype.update = function (particles) {
 
         var gridPos = this._toGridPos( particle.position );
 
-       // console.log("put particle ", particle, " in ", gridPos);
+        if(gridPos[0] < 0 || gridPos[1] < 0 || gridPos[0] >= this.xSize || gridPos[1] >= this.ySize)
+            console.log("OUTSIDE grid: ", gridPos);;
 
+        var a = this._toIndex(gridPos);
+
+        if(a < 0 || a>= this.xSize*this.ySize)
+            console.log("OUTSIDE index: ", a);
+
+     //   console.log("a: ", a);
         // TODO: should put index integer here, for better performance
+
+
+/*
+        if(typeof this.grid[this._toIndex(gridPos)] === "undefined" ) {
+            console.log("UNDEFINED");
+            console.log("grid: ", gridPos);
+            console.log("index: ", this._toIndex(gridPos) );
+            console.log("posit: ", particle.position );
+            console.log("iParticle: ", iParticle);
+            console.log(" particles.length: ",  particles.length);
+
+
+        }
+        */
+
         this.grid[this._toIndex(gridPos)].push(particle);
        // console.log("index: ", this._toIndex(gridPos),  (gridPos) );
 
@@ -138,6 +161,9 @@ SpatialHash.prototype.getNearParticles = function (particle) {
     var total = 0;
     for(var x = xMin; x <= xMax; ++x) {
         for(var y = yMin; y <= yMax; ++y) {
+
+            if(x < 0 || y < 0 || x >= this.xSize || y >= this.ySize)
+                continue;
 
             var cellParticles = this.grid[this._toIndex([x,y])];
 
