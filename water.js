@@ -69,6 +69,8 @@ function wDefault(r) {
         return 0; // outside support radius.
     }
 
+
+
     var f = 315.0 / (64.0 * Math.PI * Math.pow(h, 9));
 
     return Math.pow(h2 - r_dot_r, 3.0);
@@ -83,7 +85,15 @@ function wPressureGradient(r) {
         return [0.0, 0.0]; // outside support radius.
     }
 
-    var f = -45.0 / (Math.PI * Math.pow(h, 6)) * Math.pow(h - r_len, 2) * (1.0 / r_len);
+
+    var f;
+    if(r_len ==0.0) {
+        f = -45.0 / (Math.PI * Math.pow(h, 6));
+    } else {
+        f = -45.0 / (Math.PI * Math.pow(h, 6)) * Math.pow(h - r_len, 2) * (1.0 / r_len);
+
+    }
+
 
     return [r[0] * f, r[1] * f];
 }
@@ -238,7 +248,7 @@ function Water(gl) {
     // console.log("near: ", this.hash.getNearParticles(this.particles[8]).length );
 
 
-    //  console.log("pressure:  ",  wPressureGradient( [0.0001, 0.0001] )  );
+      console.log("ppppppppp:  ",  wPressureGradient( [0.0000000001, 0.0000000001] )  );
 
 
     // console.log("real pressure:  ",  45 / (  Math.PI* Math.pow(h,6)  )  );
@@ -339,8 +349,17 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             vec2.subtract(diff, iParticle.position, jParticle.position);
             var w = wPressureGradient(diff);
 
+            /*
+            if(isNaN(w[0])) {
+                console.log("NAN w");
+            }
+            */
+
 
             vec2.scaleAndAdd(sum, sum, w, scale);
+
+
+
         }
         vec2.scale(sum, sum, -iParticle.density);
 
@@ -377,9 +396,32 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         // console.log("gravity: ", fGravity );
         // console.log("acceleration: ", acceleration);
 
+
+        var prev = isNaN(iParticle.position[0]);
+
+
         // acceleration[1] = 0.0;
         vec2.scaleAndAdd(iParticle.velocity, iParticle.velocity, acceleration, delta);
         vec2.scaleAndAdd(iParticle.position, iParticle.position, iParticle.velocity, delta);
+
+
+
+        if(!prev && isNaN(iParticle.position[0])) {
+            console.log("particle pos is NAN");
+            console.log("F", F);
+
+            console.log("fPressure", fPressure);
+            console.log("fGravity", fGravity);
+
+            console.log("partpres: ", iParticle.pressure);
+            console.log("part_density: ", iParticle.density);
+
+            console.log("part_pos: ", iParticle.position);
+            console.log("part_vel: ", iParticle.velocity);
+
+        }
+
+
 
         // collision handling:
         for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
@@ -417,9 +459,16 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                     var n = [0.0, 0.0];
                     vec2.scale(n, x_sub_c, -Math.sign(Fx) / ( x_sub_c_len  ))
 
+                    var prev = isNaN(iParticle.position[0]);
+
                     // update particle due to collision
                     iParticle.position = cp;
                     this._reflect(iParticle.velocity, n);
+
+
+                    if(!prev && isNaN(iParticle.position[0])) {
+                        console.log("pos nan due to circle coll");
+                    }
 
                 }
 
@@ -460,9 +509,16 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                     var n = [0.0, 0.0];
                     vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
 
+
+                    var prev = isNaN(iParticle.position[0]);
+
                     // update particle due to collision
                     iParticle.position = cp;
                     this._reflect(iParticle.velocity, n);
+
+                    if(!prev && isNaN(iParticle.position[0])) {
+                        console.log("pos nan due to capsule coll");
+                    }
                 }
 
             }
