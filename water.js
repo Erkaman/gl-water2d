@@ -35,6 +35,8 @@ var particleMass = 0.02;
 
 var gravity = +9.82;
 
+var viscosity = 10.5;
+
 
 function wDefault(r) {
 
@@ -64,6 +66,17 @@ function wPressureGradient(r) {
     return [r[0] * f, r[1] * f];
 }
 
+function wViscosityLaplace(r) {
+
+    var r_len = vec2.length(r);
+
+    if (r_len > h) {
+        return 0.0;
+    }
+    var f = 45.0 / (Math.PI * Math.pow(h, 6)) * (h - r_len);
+
+    return f;
+}
 
 /*
  Constructor
@@ -148,6 +161,11 @@ function Water(gl) {
         }
     }
 
+  //  this.particles.push(new Particle([0.11, 0.1], 0.006, particleMass));
+    //this.particles.push(new Particle([0.11, 0.15], 0.006, particleMass));
+  //  this.particles.push(new Particle([0.11, 0.2], 0.006, particleMass));
+
+
     /*
      this.particles.push(new Particle([0.11, 0.1], 0.006, 700000.1));
      console.log("particle count: ", this.particles.length);
@@ -226,7 +244,9 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
         var nearParticles = this.hash.getNearParticles(iParticle);
 
-        var sum = [0.0, 0.0];
+        var pressureSum = [0.0, 0.0];
+        var viscositySum = [0.0, 0.0];
+
         for (var j = 0; j < nearParticles.length; ++j) {
 
             if (j == i)
@@ -234,36 +254,66 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
             var jParticle = this.particles[j];
 
+            var ijDiff = [0.0, 0.0];
+            vec2.subtract(ijDiff, iParticle.position, jParticle.position);
 
-            var scale = (
-                    iParticle.pressure / (iParticle.density * iParticle.density) +
-                    jParticle.pressure / (jParticle.density * jParticle.density)
-                ) * jParticle.mass;
+            var m_j = jParticle.mass;
+            var rho_i = iParticle.density;
+            var rho_j = jParticle.density;
 
-            var diff = [0.0, 0.0];
-            vec2.subtract(diff, iParticle.position, jParticle.position);
-            var w = wPressureGradient(diff);
+            var p_i = iParticle.pressure;
+            var p_j = jParticle.pressure;
+
+            var u_j = jParticle.velocity;
 
 
-            vec2.scaleAndAdd(sum, sum, w, scale);
+            /*
+            Pressure.
+             */
+            var scale = ( p_i / (rho_i * rho_i) +  p_j / (rho_j * rho_j) ) * m_j;
 
+            var w = wPressureGradient(ijDiff);
+
+            vec2.scaleAndAdd(pressureSum, pressureSum, w, scale);
+
+            /*
+            Viscosity
+             */
+
+            var w2 = wViscosityLaplace(ijDiff);
+            scale = (m_j / rho_j) * w2;
+
+            vec2.scaleAndAdd(viscositySum, viscositySum, u_j, scale);
 
         }
-        vec2.scale(sum, sum, -iParticle.density);
 
-        fPressure = [sum[0], sum[1]];
+        vec2.scale(pressureSum, pressureSum, -iParticle.density);
+        vec2.scale(viscositySum, viscositySum, viscosity);
+
+        /*
+        if(  Math.abs(pressureSum[1]) > 0.001  ) {
+            console.log(" COLLISION for part", i, " : " ,sum );
+        }*/
+
+        fPressure = [pressureSum[0], pressureSum[1]];
+        fViscosity = [viscositySum[0], viscositySum[1]];
 
         // internal forces.
-        var fInternal = fPressure;
+        var fInternal = [0.0, 0.0];
+
+       vec2.add(fInternal, fInternal, fPressure);
+      // vec2.add(fInternal, fInternal, fViscosity);
 
         // external forces.
-        var fGravity = [0, gravity * iParticle.density];
+        var fGravity = [0, gravity *iParticle.density];
         var fExternal = fGravity;
 
         // total force.
         var F = [0.0, 0.0];
         vec2.add(F, fExternal, fInternal);
 
+
+      //  console.log("F", i, " = ", F);
 
         var acceleration = [F[0] / iParticle.density, F[1] / iParticle.density];
 
@@ -793,3 +843,23 @@ module.exports = Water;
  http://image.diku.dk/projects/media/kelager.06.pdf
 
  */
+
+/*
+
+TODO: increase value of time step.
+    if we increase gas constant, we must increase time step.
+    increase support radius
+
+parameters that can be varied:
+the initial distances between the balls.
+support radius.
+time step
+num particles.
+
+    try using leap-frog
+
+try change time ste.
+
+
+    viscosity is important, because it damps the simulation!
+    */
