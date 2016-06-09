@@ -29,9 +29,12 @@ var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 var restDensity = 988.29;
 var gasStiffness = 100;
 
-h = WORLD_SCALE * 0.03;
+var particleRadius = 0.006 * WORLD_SCALE;
+
+h = particleRadius * 3;
 
 var particleMass = 1.0;
+
 
 var gravity = +9.82;
 
@@ -47,48 +50,6 @@ const kNearStiffness = 0.1;
 const kSurfaceTension = 0.0004;
 const kLinearViscocity = 0.5;
 const kQuadraticViscocity = 1.0;
-
-
-
-function wDefault(r) {
-
-    var r_dot_r = vec2.dot(r, r);
-    var h2 = h * h;
-
-    if (r_dot_r > h2) {
-        //   console.log("ZERO");
-        return 0; // outside support radius.
-    }
-
-
-    var f = 315.0 / (64.0 * Math.PI * Math.pow(h, 9));
-
-    return Math.pow(h2 - r_dot_r, 3.0);
-}
-
-function wPressureGradient(r) {
-
-    var r_len = vec2.length(r);
-
-    if (r_len > h || r_len == 0.0) {
-        return [0.0, 0.0]; // outside support radius.
-    }
-    var f = -45.0 / (Math.PI * Math.pow(h, 6)) * Math.pow(h - r_len, 2) * (1.0 / r_len);
-
-    return [r[0] * f, r[1] * f];
-}
-
-function wViscosityLaplace(r) {
-
-    var r_len = vec2.length(r);
-
-    if (r_len > h) {
-        return 0.0;
-    }
-    var f = 45.0 / (Math.PI * Math.pow(h, 6)) * (h - r_len);
-
-    return f;
-}
 
 /*
  Constructor
@@ -110,12 +71,12 @@ function Water(gl) {
     this.indexBufferObject = createBuffer(gl, [], gl.ELEMENT_ARRAY_BUFFER, gl.DYNAMIC_DRAW);
 
 
-    function Particle(position, radius, mass) {
+    function Particle(position, mass) {
 
         this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
 
         this.velocity = vec2.fromValues(0.0, 0.0);
-        this.radius = radius * WORLD_SCALE;
+        this.radius = particleRadius;
         this.mass = mass;
         this.rho = 0.0;
         this.density = 0.0;
@@ -169,7 +130,7 @@ function Water(gl) {
             var mass = (V * water_rho) / numParticles;
             //  console.log("mass: ", mass);
 
-            this.particles.push(new Particle([x, y], 0.006, particleMass));
+            this.particles.push(new Particle([x, y], particleMass));
         }
     }
 
