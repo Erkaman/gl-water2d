@@ -2,7 +2,7 @@
 
 var glShader = require('gl-shader');
 var glslify = require('glslify')
-var shell = require("gl-now")();
+var shell = require("gl-now")( {tickRate: 33} );
 var createGui = require("pnp-gui");
 var mat4 = require("gl-mat4");
 var vec3 = require("gl-vec3");
@@ -35,11 +35,12 @@ shell.on("gl-init", function () {
 var total = 0;
 
 shell.on("tick", function () {
-    /*total += 0.033;
+    /*total += 0.016;
     
     if(total > 10.0) {
-        console.log("555555: ");
+        console.log("10: ");
     }*/
+
     var canvas = shell.canvas;
 
     water.update(canvas.width, canvas.height, 0.033);

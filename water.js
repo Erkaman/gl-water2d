@@ -27,15 +27,15 @@ var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
 var restDensity = 988.29;
-var gasStiffness = 3;
+var gasStiffness = 1;
 
 h = WORLD_SCALE * 0.03;
 
-var particleMass = 0.02;
+var particleMass = 0.05;
 
 var gravity = +9.82;
 
-var viscosity = 10.5;
+var viscosity = 1.5;
 
 
 function wDefault(r) {
@@ -161,7 +161,7 @@ function Water(gl) {
         }
     }
 
-  //  this.particles.push(new Particle([0.11, 0.1], 0.006, particleMass));
+    //this.particles.push(new Particle([0.11, 0.1], 0.006, particleMass));
     //this.particles.push(new Particle([0.11, 0.15], 0.006, particleMass));
   //  this.particles.push(new Particle([0.11, 0.2], 0.006, particleMass));
 
@@ -302,7 +302,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         var fInternal = [0.0, 0.0];
 
        vec2.add(fInternal, fInternal, fPressure);
-      // vec2.add(fInternal, fInternal, fViscosity);
+       vec2.add(fInternal, fInternal, fViscosity);
 
         // external forces.
         var fGravity = [0, gravity *iParticle.density];
@@ -862,4 +862,7 @@ try change time ste.
 
 
     viscosity is important, because it damps the simulation!
+
+
+    maybe i have to little particles? 5000 is enough maybe?
     */
