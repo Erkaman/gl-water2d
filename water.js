@@ -28,9 +28,8 @@ var particleRadius = 0.01 * WORLD_SCALE;
 // support radius
 var h = particleRadius * 1.0;
 
-var particleMass = 1.0;
 
-var g = +9.82; // gravity force. 
+var g = +9.82; // gravity force.
 
 const kNorm = (20.0/(2.0*Math.PI*h*h));
 const kNearNorm = (30.0/(2.0*Math.PI*h*h));
@@ -70,7 +69,6 @@ function Water(gl) {
 
         this.velocity = vec2.fromValues(0.0, 0.0);
         this.radius = particleRadius;
-        this.mass = particleMass;
     }
 
     function Circle(position, radius, color) {
@@ -101,9 +99,9 @@ function Water(gl) {
         }
     }
 
-    //this.particles.push(new Particle([0.11, 0.1], 0.006, particleMass));
-    //this.particles.push(new Particle([0.11, 0.15], 0.006, particleMass));
-    //  this.particles.push(new Particle([0.11, 0.2], 0.006, particleMass));
+    //this.particles.push(new Particle([0.11, 0.1], 0.006));
+    //this.particles.push(new Particle([0.11, 0.15], 0.006));
+    //  this.particles.push(new Particle([0.11, 0.2], 0.006));
 //    this.particles.push(new Particle([-0.1, -0.4], 0.01));
 
     this.collisionBodies = [];
@@ -175,8 +173,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
             var r = Math.sqrt(r2);
             var a = 1 - r/h;
-            density += jParticle.mass * a*a*a * kNorm;
-            nearDensity += jParticle.mass * a*a*a*a * kNearNorm;
+            density +=   a*a*a * kNorm;
+            nearDensity +=   a*a*a*a * kNearNorm;
 
         }
 
@@ -184,7 +182,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         iParticle.nearDensity = nearDensity;
-        iParticle.P = k * (density - iParticle.mass*rho_0);
+        iParticle.P = k * (density - rho_0);
         iParticle.nearP = k_near * nearDensity;
     }
 
@@ -226,7 +224,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             // relax
 
 
-            vec2.scaleAndAdd( sum, sum, dp, -d / (  r*iParticle.mass ) );
+            vec2.scaleAndAdd( sum, sum, dp, -d / (  r ) );
 
 
             //x -= d * dx / (r*pi.m);
@@ -635,7 +633,7 @@ Water.prototype._arc = function (centerPosition, radius, direction, color, segme
 Water.prototype._reflect = function (v, n) {
     var scratch = [0.0, 0.0];
 
-    var cr = 0.02;
+    var cr = 0.2;
     vec2.subtract(
         v,
         v,
