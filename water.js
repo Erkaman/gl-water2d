@@ -27,15 +27,27 @@ var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
 var restDensity = 988.29;
-var gasStiffness = 1;
+var gasStiffness = 100;
 
 h = WORLD_SCALE * 0.03;
 
-var particleMass = 0.05;
+var particleMass = 1.0;
 
 var gravity = +9.82;
 
 var viscosity = 1.5;
+
+const kNorm = (20.0/(2.0*Math.PI*h*h));
+const kNearNorm = (30.0/(2.0*Math.PI*h*h));
+
+
+const kRestDensity = 12.0;
+const kStiffness = 0.08;
+const kNearStiffness = 0.1;
+const kSurfaceTension = 0.0004;
+const kLinearViscocity = 0.5;
+const kQuadraticViscocity = 1.0;
+
 
 
 function wDefault(r) {
@@ -142,7 +154,7 @@ function Water(gl) {
     //h = Math.pow( (V * supportCount) / ( Math.PI * numParticles ) , 1/2);
 
 
-    console.log("h: ", h);
+    //console.log("h: ", h);
 
 
     // 0.013
@@ -163,7 +175,7 @@ function Water(gl) {
 
     //this.particles.push(new Particle([0.11, 0.1], 0.006, particleMass));
     //this.particles.push(new Particle([0.11, 0.15], 0.006, particleMass));
-  //  this.particles.push(new Particle([0.11, 0.2], 0.006, particleMass));
+    //  this.particles.push(new Particle([0.11, 0.2], 0.006, particleMass));
 
 
     /*
@@ -203,150 +215,144 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
+
+    for (var i = 0; i < this.particles.length; ++i) {
+        var iParticle = this.particles[i];
+
+        // gravity:
+        iParticle.velocity[1] += gravity * delta;
+
+
+        // preserve position.
+        iParticle.prevPosition = [iParticle.position[0], iParticle.position[1]];
+
+        // advance due to gravity.
+        vec2.scaleAndAdd(iParticle.position, iParticle.position, iParticle.velocity, delta);
+    }
+
     this.hash.update(this.particles);
 
-    // compute mass density.
+
+    // calculate pressures.
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
 
-        var sum = 0.0;
 
         var nearParticles = this.hash.getNearParticles(iParticle);
+
+        var density = 0.0;
+        var nearDensity = 0.0;
 
         for (var j = 0; j < nearParticles.length; ++j) {
 
             var jParticle = nearParticles[j];
 
-            var diff = [0.0, 0.0];
-            vec2.subtract(diff, iParticle.position, jParticle.position);
+            var dp = [0.0, 0.0];
 
-            var w = wDefault(diff);
-            //  console.log("w ", w);
+            vec2.subtract(dp, jParticle.position, iParticle.position);
 
-            sum += w * jParticle.mass;
+            var r2 = vec2.dot(dp, dp);
+            //float r2 = dx*dx + dy*dy;
+
+            if (r2 < 0.000001 || r2 > h*h)
+                continue;
+
+            var r = Math.sqrt(r2);
+            var a = 1 - r/h;
+            density += jParticle.mass * a*a*a * kNorm;
+            nearDensity += jParticle.mass * a*a*a*a * kNearNorm;
+
         }
 
-        iParticle.density = sum;
+        iParticle.density = density;
 
-        iParticle.pressure = gasStiffness * ( iParticle.density - restDensity );
 
+        iParticle.nearDensity = nearDensity;
+        iParticle.P = kStiffness * (density - iParticle.mass*kRestDensity);
+        iParticle.nearP = kNearStiffness * nearDensity;
+    }
+
+    // calculate relaxed positions:
+
+
+    for (var i = 0; i < this.particles.length; ++i) {
+
+        var iParticle = this.particles[i];
+        var nearParticles = this.hash.getNearParticles(iParticle);
+
+
+        var sum = [iParticle.position[0], iParticle.position[1] ];
+
+
+
+        for (var j = 0; j < nearParticles.length; ++j) {
+
+
+            var jParticle = nearParticles[j];
+
+            var dp = [0.0, 0.0];
+            vec2.subtract(dp, jParticle.position, iParticle.position);
+            //float dx = pj.x - pi.x;
+            //float dy = pj.y - pi.y;
+
+
+            var r2 = vec2.dot(dp, dp);
+            var r = Math.sqrt(r2);
+
+            if (r2 < 0.000001 || r2 > h*h)
+                continue;
+
+
+
+            var a = 1 - r/h;
+
+            var d = delta*delta * ((iParticle.nearP+jParticle.nearP)*a*a*a*kNearNorm + (iParticle.P+jParticle.P)*a*a*kNorm) / 2;
+
+            // relax
+
+
+            vec2.scaleAndAdd( sum, sum, dp, -d / (  r*iParticle.mass ) );
+
+
+            //x -= d * dx / (r*pi.m);
+            //y -= d * dy / (r*pi.m);
+
+        }
+
+        iParticle.relaxedPosition = [sum[0], sum[1]];
 
     }
+
+
+    for (var i = 0; i < this.particles.length; ++i) {
+        var iParticle = this.particles[i];
+
+
+        // Compute relaxed here.
+
+
+        iParticle.position = [iParticle.relaxedPosition[0], iParticle.relaxedPosition[1]];
+
+
+        var diff = vec2.create();
+        vec2.subtract(diff, iParticle.position, iParticle.prevPosition);
+
+        vec2.scale(iParticle.velocity, diff, 1.0 / delta);
+
+    }
+
 
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
 
-        // use equation 4.10 to do pressure.
-        var fPressure = [0.0, 0.0];
-
-
-        var nearParticles = this.hash.getNearParticles(iParticle);
-
-        var pressureSum = [0.0, 0.0];
-        var viscositySum = [0.0, 0.0];
-
-        for (var j = 0; j < nearParticles.length; ++j) {
-
-            if (j == i)
-                continue; // don't do pressure on yourself!
-
-            var jParticle = this.particles[j];
-
-            var ijDiff = [0.0, 0.0];
-            vec2.subtract(ijDiff, iParticle.position, jParticle.position);
-
-            var m_j = jParticle.mass;
-            var rho_i = iParticle.density;
-            var rho_j = jParticle.density;
-
-            var p_i = iParticle.pressure;
-            var p_j = jParticle.pressure;
-
-            var u_j = jParticle.velocity;
-
-
-            /*
-            Pressure.
-             */
-            var scale = ( p_i / (rho_i * rho_i) +  p_j / (rho_j * rho_j) ) * m_j;
-
-            var w = wPressureGradient(ijDiff);
-
-            vec2.scaleAndAdd(pressureSum, pressureSum, w, scale);
-
-            /*
-            Viscosity
-             */
-
-            var w2 = wViscosityLaplace(ijDiff);
-            scale = (m_j / rho_j) * w2;
-
-            vec2.scaleAndAdd(viscositySum, viscositySum, u_j, scale);
-
-        }
-
-        vec2.scale(pressureSum, pressureSum, -iParticle.density);
-        vec2.scale(viscositySum, viscositySum, viscosity);
-
-        /*
-        if(  Math.abs(pressureSum[1]) > 0.001  ) {
-            console.log(" COLLISION for part", i, " : " ,sum );
-        }*/
-
-        fPressure = [pressureSum[0], pressureSum[1]];
-        fViscosity = [viscositySum[0], viscositySum[1]];
-
-        // internal forces.
-        var fInternal = [0.0, 0.0];
-
-       vec2.add(fInternal, fInternal, fPressure);
-       vec2.add(fInternal, fInternal, fViscosity);
-
-        // external forces.
-        var fGravity = [0, gravity *iParticle.density];
-        var fExternal = fGravity;
-
-        // total force.
-        var F = [0.0, 0.0];
-        vec2.add(F, fExternal, fInternal);
-
-
-      //  console.log("F", i, " = ", F);
-
-        var acceleration = [F[0] / iParticle.density, F[1] / iParticle.density];
-
-
-        var prev = isNaN(iParticle.position[0]);
-
-
-        // acceleration[1] = 0.0;
-        vec2.scaleAndAdd(iParticle.velocity, iParticle.velocity, acceleration, delta);
-        vec2.scaleAndAdd(iParticle.position, iParticle.position, iParticle.velocity, delta);
-
-        if (!prev && isNaN(iParticle.position[0])) {
-            console.log("particle pos is NAN");
-            console.log("F", F);
-
-            console.log("fPressure", fPressure);
-            console.log("fGravity", fGravity);
-
-            console.log("partpres: ", iParticle.pressure);
-            console.log("part_density: ", iParticle.density);
-
-            console.log("part_pos: ", iParticle.position);
-            console.log("part_vel: ", iParticle.velocity);
-
-        }
 
         // collision handling:
         for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
 
             var body = this.collisionBodies[iBody];
 
-
-            var cr = 0.01;
             var x = iParticle.position;
             var scratch = vec2.create();
 
@@ -731,7 +737,7 @@ Water.prototype._arc = function (centerPosition, radius, direction, color, segme
 Water.prototype._reflect = function (v, n) {
     var scratch = [0.0, 0.0];
 
-    var cr = 0.01;
+    var cr = 0.02;
     vec2.subtract(
         v,
         v,
@@ -846,23 +852,23 @@ module.exports = Water;
 
 /*
 
-TODO: increase value of time step.
-    if we increase gas constant, we must increase time step.
-    increase support radius
+ TODO: increase value of time step.
+ if we increase gas constant, we must increase time step.
+ increase support radius
 
-parameters that can be varied:
-the initial distances between the balls.
-support radius.
-time step
-num particles.
+ parameters that can be varied:
+ the initial distances between the balls.
+ support radius.
+ time step
+ num particles.
 
-    try using leap-frog
+ try using leap-frog
 
-try change time ste.
-
-
-    viscosity is important, because it damps the simulation!
+ try change time ste.
 
 
-    maybe i have to little particles? 5000 is enough maybe?
-    */
+ viscosity is important, because it damps the simulation!
+
+
+ maybe i have to little particles? 5000 is enough maybe?
+ */
