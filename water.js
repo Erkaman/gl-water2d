@@ -31,12 +31,10 @@ var h = particleRadius * 1.0;
 
 var g = +9.82; // gravity force.
 
-const kNorm = (20.0/(2.0*Math.PI*h*h));
-const kNearNorm = (30.0/(2.0*Math.PI*h*h));
 
-const rho_0 = 12.0; // rest density
-const k = 0.08; // gas stiffness constant.
-const k_near = 0.1; // gas stiffness for near.
+const rho_0 = 120.0; // rest density
+const k = 0.8; // gas stiffness constant.
+const k_near = 1.0; // gas stiffness for near.
 /*
 const kSurfaceTension = 0.0004;
 const kLinearViscocity = 0.5;
@@ -173,8 +171,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
             var r = Math.sqrt(r2);
             var a = 1 - r/h;
-            density +=   a*a*a * kNorm;
-            nearDensity +=   a*a*a*a * kNearNorm;
+            density +=   a*a*a ;
+            nearDensity +=   a*a*a*a ;
 
         }
 
@@ -195,7 +193,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         var sum = [iParticle.position[0], iParticle.position[1] ];
-
 
 
         for (var j = 0; j < nearParticles.length; ++j) {
@@ -219,7 +216,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
             var a = 1 - r/h;
 
-            var d = delta*delta * ((iParticle.nearP+jParticle.nearP)*a*a*a*kNearNorm + (iParticle.P+jParticle.P)*a*a*kNorm) / 2;
+            var d = delta*delta * ((iParticle.nearP+jParticle.nearP)*a*a*a + (iParticle.P+jParticle.P)*a*a) / 2;
 
             // relax
 
