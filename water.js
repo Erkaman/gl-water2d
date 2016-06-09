@@ -16,9 +16,6 @@ var SpatialHash = require("./spatial_hash.js");
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
 
-// support radius.
-var h = 0.0;
-
 var WORLD_MIN = [-0.35, -0.5];
 var WORLD_MAX = [+0.35, +0.4];
 var WORLD_SCALE = 50.0;
@@ -26,30 +23,26 @@ var WORLD_SCALE = 50.0;
 var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
-var restDensity = 988.29;
-var gasStiffness = 100;
+var particleRadius = 0.01 * WORLD_SCALE;
 
-var particleRadius = 0.006 * WORLD_SCALE;
-
-h = particleRadius * 3;
+// support radius
+var h = particleRadius * 1.0;
 
 var particleMass = 1.0;
 
-
-var gravity = +9.82;
-
-var viscosity = 1.5;
+var g = +9.82; // gravity force. 
 
 const kNorm = (20.0/(2.0*Math.PI*h*h));
 const kNearNorm = (30.0/(2.0*Math.PI*h*h));
 
-
-const kRestDensity = 12.0;
-const kStiffness = 0.08;
-const kNearStiffness = 0.1;
+const rho_0 = 12.0; // rest density
+const k = 0.08; // gas stiffness constant.
+const k_near = 0.1; // gas stiffness for near.
+/*
 const kSurfaceTension = 0.0004;
 const kLinearViscocity = 0.5;
 const kQuadraticViscocity = 1.0;
+*/
 
 /*
  Constructor
@@ -71,16 +64,13 @@ function Water(gl) {
     this.indexBufferObject = createBuffer(gl, [], gl.ELEMENT_ARRAY_BUFFER, gl.DYNAMIC_DRAW);
 
 
-    function Particle(position, mass) {
+    function Particle(position) {
 
         this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
 
         this.velocity = vec2.fromValues(0.0, 0.0);
         this.radius = particleRadius;
-        this.mass = mass;
-        this.rho = 0.0;
-        this.density = 0.0;
-        this.pressure = 0.0;
+        this.mass = particleMass;
     }
 
     function Circle(position, radius, color) {
@@ -104,57 +94,24 @@ function Water(gl) {
     this.particles = [];
 
 
-    var V = (0.35 - 0.11) * (0.3 - 0.1)
-    var water_rho = 1000000;
-    var numParticles = 304;
+    for (var y = -0.3; y < 0.14; y += 0.017) {
 
-    // how many particles are affected by the support radius.(5.14)
-    var supportCount = 15;
-
-
-    //h = Math.pow( (V * supportCount) / ( Math.PI * numParticles ) , 1/2);
-
-
-    //console.log("h: ", h);
-
-
-    // 0.013
-    for (var y = 0.11; y < 0.35; y += 0.013) {
-
-        for (var x = 0.1; x < 0.3; x += 0.013) {
-
-            // rho = 1000
-            // n = 56
-            // (A * rho) / n = mass = 7.1
-
-            var mass = (V * water_rho) / numParticles;
-            //  console.log("mass: ", mass);
-
-            this.particles.push(new Particle([x, y], particleMass));
+        for (var x = -0.2; x < 0.1; x += 0.017) {
+            this.particles.push(new Particle([x, y]));
         }
     }
 
     //this.particles.push(new Particle([0.11, 0.1], 0.006, particleMass));
     //this.particles.push(new Particle([0.11, 0.15], 0.006, particleMass));
     //  this.particles.push(new Particle([0.11, 0.2], 0.006, particleMass));
-
-
-    /*
-     this.particles.push(new Particle([0.11, 0.1], 0.006, 700000.1));
-     console.log("particle count: ", this.particles.length);
-     */
-
-
 //    this.particles.push(new Particle([-0.1, -0.4], 0.01));
 
     this.collisionBodies = [];
 
     //this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [0.7, 0.2, 0.2]));
 
-
-    const FRAME_RADIUS = 0.03;
+    const FRAME_RADIUS = 0.06;
     const FRAME_COLOR = [0, 0.5, 0];
-
 
     // frame
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, FRAME_COLOR));
@@ -165,7 +122,7 @@ function Water(gl) {
     this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
     this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
 
-    this.collisionBodies.push(new Capsule([+0.05, 0.0], [+0.05, +0.4], FRAME_RADIUS, FRAME_COLOR));
+   // this.collisionBodies.push(new Capsule([+0.05, 0.0], [+0.05, +0.4], FRAME_RADIUS, FRAME_COLOR));
 
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
 }
@@ -175,19 +132,17 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
-
-
     for (var i = 0; i < this.particles.length; ++i) {
         var iParticle = this.particles[i];
 
-        // gravity:
-        iParticle.velocity[1] += gravity * delta;
+        // g:
+        iParticle.velocity[1] += g * delta;
 
 
         // preserve position.
         iParticle.prevPosition = [iParticle.position[0], iParticle.position[1]];
 
-        // advance due to gravity.
+        // advance due to g.
         vec2.scaleAndAdd(iParticle.position, iParticle.position, iParticle.velocity, delta);
     }
 
@@ -214,7 +169,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             vec2.subtract(dp, jParticle.position, iParticle.position);
 
             var r2 = vec2.dot(dp, dp);
-            //float r2 = dx*dx + dy*dy;
 
             if (r2 < 0.000001 || r2 > h*h)
                 continue;
@@ -230,12 +184,11 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         iParticle.nearDensity = nearDensity;
-        iParticle.P = kStiffness * (density - iParticle.mass*kRestDensity);
-        iParticle.nearP = kNearStiffness * nearDensity;
+        iParticle.P = k * (density - iParticle.mass*rho_0);
+        iParticle.nearP = k_near * nearDensity;
     }
 
     // calculate relaxed positions:
-
 
     for (var i = 0; i < this.particles.length; ++i) {
 
@@ -289,12 +242,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     for (var i = 0; i < this.particles.length; ++i) {
         var iParticle = this.particles[i];
 
-
-        // Compute relaxed here.
-
-
         iParticle.position = [iParticle.relaxedPosition[0], iParticle.relaxedPosition[1]];
-
 
         var diff = vec2.create();
         vec2.subtract(diff, iParticle.position, iParticle.prevPosition);
@@ -393,24 +341,13 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                     var n = [0.0, 0.0];
                     vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
 
-
-                    var prev = isNaN(iParticle.position[0]);
-
                     // update particle due to collision
                     iParticle.position = cp;
                     this._reflect(iParticle.velocity, n);
-
-                    if (!prev && isNaN(iParticle.position[0])) {
-                        console.log("pos nan due to capsule coll");
-                    }
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -783,14 +720,14 @@ module.exports = Water;
 
 
  5.6.4
- compute gravity force.
+ compute g force.
 
 
 
  5.6.5
 
  F = f_internal + f_external
- but it in will only be the gravity force, in our simplified case.
+ but it in will only be the g force, in our simplified case.
 
  use leap-frog to advance particle velocity and position.
 
@@ -809,27 +746,4 @@ module.exports = Water;
  masters thesis:
  http://image.diku.dk/projects/media/kelager.06.pdf
 
- */
-
-/*
-
- TODO: increase value of time step.
- if we increase gas constant, we must increase time step.
- increase support radius
-
- parameters that can be varied:
- the initial distances between the balls.
- support radius.
- time step
- num particles.
-
- try using leap-frog
-
- try change time ste.
-
-
- viscosity is important, because it damps the simulation!
-
-
- maybe i have to little particles? 5000 is enough maybe?
  */
