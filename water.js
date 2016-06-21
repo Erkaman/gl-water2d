@@ -16,8 +16,8 @@ var SpatialHash = require("./spatial_hash.js");
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
 
-var WORLD_MIN = [-0.75, -0.5];
-var WORLD_MAX = [+0.75, +0.7];
+var WORLD_MIN = [-1.6, -0.8];
+var WORLD_MAX = [+1.6, +0.9];
 var WORLD_SCALE = 7.0;
 
 var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
@@ -32,10 +32,11 @@ var h = particleRadius * 5.0;
 var g = +9.82; // gravity force.
 
 
-const rho_0 = 1.0; // rest density
-const l = 0.00
-const k = 0.008*(1-l) + (0.08)*(l); // gas stiffness constant.
-const k_near = 0.1; // gas stiffness for near.
+const rho_0 = 82.0; // rest density
+//const l = 0.08
+//const k = 0.008*(1-l) + (0.08)*(l); // gas stiffness constant.
+const k = 0.1;
+const k_near = 0.08; // gas stiffness for near.
 /*
 const kSurfaceTension = 0.0004;
 const kLinearViscocity = 0.5;
@@ -43,16 +44,16 @@ const kQuadraticViscocity = 1.0;
 */
 
 
-
 const kNorm = (20.0/(2.0*Math.PI*h*h));
 const kNearNorm = (30.0/(2.0*Math.PI*h*h));
-
-
 
 const kappa = 0.2; // surface tension.
 
 const sigma = 0.5; // linear viscosity
 const beta  = 1.0; // quadratic viscosity.
+
+
+var cr = 0.9;
 
 
 /*
@@ -97,14 +98,14 @@ function Water(gl) {
     this.particles = [];
 
 
-    /*
-    for (var y = -0.3; y < 0.14; y += 0.017) {
 
-        for (var x = -0.2; x < 0.2; x += 0.017) {
-            this.particles.push(new Particle([x, y]));
+    for (var y = -0.5; y < 0.34; y += 0.037) {
+
+        for (var x = -1.0; x < -0.2; x += 0.037) {
+            this.particles.push(new Particle([x, y], [0.0, 0.0]));
         }
     }
-    */
+
     
    // console.log("count: ",  this.particles.length );
 
@@ -155,16 +156,16 @@ var count = 0;
 
 
 Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
-
-
+    
     count++;
 
-    if(this.particles.length < 900) {
+    /*
+    if(this.particles.length < 700) {
 
-        if (count % 3 == 0) {
+        if (count % 10 == 0) {
 
-            var xMin = 0.37;
-            var xMax = 0.42
+            var xMin = 0.77;
+            var xMax = 0.72;
 
             var yMin = +0.01;
             var yMax = +0.03;
@@ -174,11 +175,16 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
                 [getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
             this.particles.push(new Particle([-0.2, 0.0],
                 [getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
+
+            this.particles.push(new Particle([-0.2, 0.0],
+                [-getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
+
             this.particles.push(new Particle([-0.2, 0.03],
-                [getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
+                [-getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
 
         }
     }
+    */
 
 
     for (var i = 0; i < this.particles.length; ++i) {
@@ -455,7 +461,7 @@ Water.prototype.draw = function (gl) {
     var WORLD_SCALE = 50.0;
 */
 
-    this._box([-0.75, -0.5], [1.5, 1.2], [1.0, 1.0, 1.0]);
+    this._box([-1.6, -0.8], [3.2, 1.7], [1.0, 1.0, 1.0]);
 
     for (var i = 0; i < this.collisionBodies.length; ++i) {
 
@@ -474,7 +480,7 @@ Water.prototype.draw = function (gl) {
         var particle = this.particles[i];
 
         this._circle(
-            [particle.position[0] / WORLD_SCALE, particle.position[1] / WORLD_SCALE], 1.2*(particle.radius / WORLD_SCALE),
+            [particle.position[0] / WORLD_SCALE, particle.position[1] / WORLD_SCALE], 2.5*(particle.radius / WORLD_SCALE),
 
             particle.color,
 //            [0.0, 0.0, 1.0],
@@ -721,7 +727,6 @@ Water.prototype._arc = function (centerPosition, radius, direction, color, segme
 Water.prototype._reflect = function (v, n) {
     var scratch = [0.0, 0.0];
 
-    var cr = 0.7;
     vec2.subtract(
         v,
         v,

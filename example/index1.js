@@ -2,7 +2,7 @@
 
 var glShader = require('gl-shader');
 var glslify = require('glslify')
-var shell = require("gl-now")( {tickRate: 33} );
+var shell = require("gl-now")( {tickRate: 10} );
 var createGui = require("pnp-gui");
 var mat4 = require("gl-mat4");
 var vec3 = require("gl-vec3");
@@ -43,7 +43,7 @@ shell.on("tick", function () {
 
     var canvas = shell.canvas;
 
-    water.update(canvas.width, canvas.height, 0.033);
+    water.update(canvas.width, canvas.height, 0.01);
 
     
 
@@ -57,7 +57,7 @@ shell.on("gl-render", function (t) {
 
 
     water.draw(gl);
-    
+    /*
     var pressed = shell.wasDown("mouse-left");
     var io = {
         mouseLeftDownCur: pressed,
@@ -77,6 +77,7 @@ shell.on("gl-render", function (t) {
 
 
     gui.end(gl, canvas.width, canvas.height);
+    */
 });
 
 
