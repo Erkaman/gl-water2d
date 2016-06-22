@@ -16,27 +16,32 @@ var SpatialHash = require("./spatial_hash.js");
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
 
-var WORLD_MIN = [-1.6, -0.8];
-var WORLD_MAX = [+1.6, +0.9];
-var WORLD_SCALE = 7.0;
+var WORLD_MIN = [-0.9, -0.5];
+var WORLD_MAX = [+0.9, +0.8];
+var WORLD_SCALE = 260.0;
 
 var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
-var particleRadius = 0.01 * WORLD_SCALE;
+var particleRadius = 0.035 * WORLD_SCALE;
 
 // support radius
-var h = particleRadius * 5.0;
+var h = 0.035 * WORLD_SCALE;
+
+var renderMult = 0.5; // 2.5
+
+var gravity = +0.03; // gravity force.
+var sigma = 0.8;
+var beta = 0.5;
+
+var wallDamp = 1.0 / 5.0;
 
 
-var g = +9.82; // gravity force.
-
-
-const rho_0 = 82.0; // rest density
+const rho_0 = 9.0 // rest density
 //const l = 0.08
 //const k = 0.008*(1-l) + (0.08)*(l); // gas stiffness constant.
-const k = 0.1;
-const k_near = 0.08; // gas stiffness for near.
+const k = 0.07;
+const k_near = 7.0; // gas stiffness for near.
 /*
 const kSurfaceTension = 0.0004;
 const kLinearViscocity = 0.5;
@@ -49,11 +54,9 @@ const kNearNorm = (30.0/(2.0*Math.PI*h*h));
 
 const kappa = 0.2; // surface tension.
 
-const sigma = 0.5; // linear viscosity
-const beta  = 1.0; // quadratic viscosity.
 
 
-var cr = 0.9;
+var cr = 0.7;
 
 
 /*
@@ -99,15 +102,19 @@ function Water(gl) {
 
 
 
-    for (var y = -0.5; y < 0.34; y += 0.037) {
-
-        for (var x = -1.0; x < -0.2; x += 0.037) {
+    for (var y = -0.2; y < 0.45; y += 0.028) {
+        for (var x = -0.2; x < +0.5; x += 0.028) {
             this.particles.push(new Particle([x, y], [0.0, 0.0]));
         }
     }
 
-    
-   // console.log("count: ",  this.particles.length );
+
+/*
+   this.particles.push(new Particle([-0.25, -0.2], [0.0, 0.0]));
+    this.particles.push(new Particle([-0.2, 0.2], [0.0, 0.0]));
+*/
+
+    // console.log("count: ",  this.particles.length );
 
     //this.particles.push(new Particle([0.11, 0.1], 0.006));
     //this.particles.push(new Particle([0.11, 0.15], 0.006));
@@ -146,45 +153,31 @@ function Particle(position, velocity) {
 
     this.velocity = vec2.fromValues(velocity[0] * WORLD_SCALE, velocity[1] * WORLD_SCALE);
 
-    this.color = [ 0.0, 0.0 ,getRandomArbitrary(0.7, 1.0)  ] ;
+   // console.log("add part: ", this.position );
+   // this.color = [ 0.0, 0.0 ,getRandomArbitrary(0.7, 1.0)  ] ;
+    this.color = [ getRandomArbitrary(0.0, 1.0), getRandomArbitrary(0.0, 1.0) ,getRandomArbitrary(0.0, 1.0)  ] ;
 
     this.radius = particleRadius;
+
+    this.o = [this.position[0], this.position[1]];
+    this.f = [0.0, 0.0];
+
+
 
 }
 
 var count = 0;
 
+var timeCount = 0;
 
 Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     
     count++;
 
-    /*
-    if(this.particles.length < 700) {
 
-        if (count % 10 == 0) {
+    this.canvasWidth = canvasWidth;
+    this.canvasHeight = canvasHeight;
 
-            var xMin = 0.77;
-            var xMax = 0.72;
-
-            var yMin = +0.01;
-            var yMax = +0.03;
-
-
-            this.particles.push(new Particle([-0.2, -0.03],
-                [getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
-            this.particles.push(new Particle([-0.2, 0.0],
-                [getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
-
-            this.particles.push(new Particle([-0.2, 0.0],
-                [-getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
-
-            this.particles.push(new Particle([-0.2, 0.03],
-                [-getRandomArbitrary(xMin,xMax), getRandomArbitrary(yMin,yMax)]));
-
-        }
-    }
-    */
 
 
     for (var i = 0; i < this.particles.length; ++i) {
@@ -197,6 +190,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         if(p[0] < SCALED_WORLD_MIN[0] || p[1] < SCALED_WORLD_MIN[1] ||
             p[0] > SCALED_WORLD_MAX[0] || p[1] > SCALED_WORLD_MAX[1]) {
 
+            console.log("remove part at ", p );
 
             this.particles.splice(i, 1);
             --i;
@@ -204,35 +198,140 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     }
 
 
-    this.canvasWidth = canvasWidth;
-    this.canvasHeight = canvasHeight;
-    for (var i = 0; i < this.particles.length; ++i) {
-        var iParticle = this.particles[i];
 
-        // g:
-        iParticle.velocity[1] += g * delta;
-
-
-        // preserve position.
-        iParticle.prevPosition = [iParticle.position[0], iParticle.position[1]];
-
-        // advance due to g.
-        vec2.scaleAndAdd(iParticle.position, iParticle.position, iParticle.velocity, delta);
-    }
+   // console.log("step2: ", this.particles.length );
 
     this.hash.update(this.particles);
 
+
+    for (var i = 0; i < this.particles.length; ++i) {
+        var iParticle = this.particles[i];
+
+
+        vec2.add(iParticle.position, iParticle.position, iParticle.f);
+        iParticle.f = [0.0, 0.0];
+
+       // console.log("move: ", iParticle.position);
+
+        iParticle.nearDensity = 0.0;
+        iParticle.density = 0.0;
+
+
+        //var diff = vec2.create();
+        vec2.subtract( iParticle.velocity, iParticle.position, iParticle.o);
+
+
+        iParticle.velocity[1] += gravity;
+
+      //  console.log("grav: ", gravity);
+
+
+        // do viscosisity.
+
+
+
+        var nearParticles = this.hash.getNearParticles(iParticle);
+
+        for (var j = 0; j < nearParticles.length; ++j) {
+
+            var jParticle = nearParticles[j];
+
+            var dp = [0.0, 0.0];
+            vec2.subtract(dp, iParticle.position, jParticle.position);
+
+            var r2 = vec2.dot(dp, dp);
+
+            if (r2 <= 0.0 || r2 > h * h)
+                continue;
+
+            var r = Math.sqrt(r2);
+
+            var normalized_r = [0.0, 0.0];
+            vec2.scale( normalized_r, dp, 1.0/r );
+
+            var one_minus_q = 1 - r/h;
+
+
+
+            var vi_minus_vj = [0.0, 0.0];
+
+            // TODO: should it not be that reverse order?
+            vec2.subtract(vi_minus_vj, iParticle.velocity, jParticle.velocity);
+
+
+            var u = vec2.dot(  vi_minus_vj, normalized_r  );
+//                (_loc2_.vx - _loc8_.vx) * _loc9_ + (_loc2_.vy - _loc8_.vy) * _loc10_;
+
+
+
+            var T = 0;
+            if(u > 0) {
+
+                T = one_minus_q * (sigma * u + beta * u * u) * 0.5;
+
+                if(T < u) {
+                    T = T;
+                } else {
+                    T = u;
+                }
+            } else {
+
+                T = one_minus_q * (sigma * u - beta * u * u) * 0.5;
+
+                if(T > u) {
+                    T = T;
+                } else {
+                    T = u;
+                }
+
+            }
+
+            var I_div2 = [0.0, 0.0];
+            vec2.scale( I_div2, normalized_r, T );
+
+            vec2.scaleAndAdd(iParticle.velocity, iParticle.velocity, I_div2, -1.0 );
+            vec2.scaleAndAdd(jParticle.velocity, jParticle.velocity, I_div2, +1.0 );
+
+
+        }
+
+
+
+
+    }
 
     // calculate pressures.
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
 
+        iParticle.o = [ iParticle.position[0], iParticle.position[1] ];
+
+      //  console.log("add vel: ", iParticle.velocity);
+        vec2.add(  iParticle.position, iParticle.position, iParticle.velocity );
+      //  console.log("added vel: ", iParticle.position);
+
+        // do collision handling here!
+
+        // SCALED_WORLD_MAX
+
+        const pad = 15;
+
+        if(iParticle.position[1] > SCALED_WORLD_MAX[1]-pad) {
+            iParticle.position[1] += ( SCALED_WORLD_MAX[1]-pad - iParticle.position[1]   ) * wallDamp;
+        }
+        else if(iParticle.position[0] > SCALED_WORLD_MAX[0]-pad) {
+            iParticle.position[0] += ( SCALED_WORLD_MAX[0]-pad - iParticle.position[0]   ) * wallDamp;
+        }
+        else if(iParticle.position[0] < SCALED_WORLD_MIN[0]+pad) {
+            iParticle.position[0] += ( SCALED_WORLD_MIN[0]+pad - iParticle.position[0]   ) * wallDamp;
+        }
+        else if(iParticle.position[1] < SCALED_WORLD_MIN[1]+5) {
+            iParticle.position[1] += ( SCALED_WORLD_MIN[1]+pad - iParticle.position[1]   ) * wallDamp;
+        }
+
 
         var nearParticles = this.hash.getNearParticles(iParticle);
-
-        var density = 0.0;
-        var nearDensity = 0.0;
 
         for (var j = 0; j < nearParticles.length; ++j) {
 
@@ -240,37 +339,47 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
             var dp = [0.0, 0.0];
 
-            vec2.subtract(dp, jParticle.position, iParticle.position);
+            vec2.subtract(dp, iParticle.position, jParticle.position);
 
             var r2 = vec2.dot(dp, dp);
 
-            if (r2 < 0.000001 || r2 > h*h)
+            if (r2 <= 0.0 || r2 > h*h)
                 continue;
 
             var r = Math.sqrt(r2);
             var a = 1 - r/h;
-            density +=   a*a*a * kNorm ;
-            nearDensity +=   a*a*a*a * kNearNorm;
 
+            var aa = a*a;
+            var aaa = aa*a;
+
+            iParticle.density +=  aa;
+            jParticle.density +=  aa;
+
+            iParticle.nearDensity +=  aaa;
+            jParticle.nearDensity +=  aaa;
         }
-
-        iParticle.density = density;
-
-
-        iParticle.nearDensity = nearDensity;
-        iParticle.P = k * (density - rho_0);
-        iParticle.nearP = k_near * nearDensity;
     }
+
+   // console.log("step5");
+
 
     // calculate relaxed positions:
 
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
+
+        var pressure     = k * (iParticle.density - rho_0);
+        var nearPressure = k_near * iParticle.nearDensity;
+
+        //console.log("pressure ", pressure);
+        //console.log("nearPressure ", nearPressure);
+
+
         var nearParticles = this.hash.getNearParticles(iParticle);
 
 
-        var sum = [iParticle.position[0], iParticle.position[1] ];
+        //var sum = [iParticle.position[0], iParticle.position[1] ];
 
 
         for (var j = 0; j < nearParticles.length; ++j) {
@@ -279,157 +388,42 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             var jParticle = nearParticles[j];
 
             var dp = [0.0, 0.0];
-            vec2.subtract(dp, jParticle.position, iParticle.position);
+            vec2.subtract(dp, iParticle.position, jParticle.position);
             //float dx = pj.x - pi.x;
             //float dy = pj.y - pi.y;
 
 
             var r2 = vec2.dot(dp, dp);
-            var r = Math.sqrt(r2);
 
-            if (r2 < 0.000001 || r2 > h*h)
+            if (r2 <= 0.0 || r2 > h*h)
                 continue;
 
-
-
+            var r = Math.sqrt(r2);
             var a = 1 - r/h;
 
            // var d = delta*delta * ((iParticle.nearP+jParticle.nearP)*a*a*a*kNearNorm + (iParticle.P*jParticle.P)*a*a*kNorm) / 2;
 
-            var d = delta*delta * ( (iParticle.P*jParticle.P)*a*a*kNorm) / 2;
 
-            // relax
-            vec2.scaleAndAdd( sum, sum, dp, -d / (  r ) );
+            var D = ( pressure * a + nearPressure * a * a ) * 0.5;
 
-            // tension.
-            //vec2.scaleAndAdd( sum, sum, dp, (kappa * a*a)  );
+            var DA = [0.0, 0.0];
 
+            vec2.scale( DA, dp, D / r );
 
-            //          x += (kSurfaceTension) * a*a*kNorm * dx;
-//            y += (kSurfaceTension) * a*a*kNorm * dy;
+           // console.log("generate pressure: ", DA );
 
 
-
-
-
+            vec2.scaleAndAdd(iParticle.f, iParticle.f, DA, 1.0 );
+            vec2.scaleAndAdd(jParticle.f, jParticle.f, DA, -1.0 );
 
 
         }
 
-        iParticle.relaxedPosition = [sum[0], sum[1]];
+       // iParticle.relaxedPosition = [sum[0], sum[1]];
 
     }
 
 
-    for (var i = 0; i < this.particles.length; ++i) {
-        var iParticle = this.particles[i];
-
-        iParticle.position = [iParticle.relaxedPosition[0], iParticle.relaxedPosition[1]];
-
-        var diff = vec2.create();
-        vec2.subtract(diff, iParticle.position, iParticle.prevPosition);
-
-        vec2.scale(iParticle.velocity, diff, 1.0 / delta);
-
-    }
-
-
-    for (var i = 0; i < this.particles.length; ++i) {
-
-        var iParticle = this.particles[i];
-
-
-        // collision handling:
-        for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
-
-            var body = this.collisionBodies[iBody];
-
-            var x = iParticle.position;
-            var scratch = vec2.create();
-
-
-            if (body.type == CIRCLE_BODY) {
-                var c = body.position;
-                var r = body.radius;
-
-                var x_sub_c = vec2.create();
-                vec2.subtract(x_sub_c, x, c);
-
-                var Fx = vec2.squaredLength(x_sub_c) - r * r;
-
-                // collision if F(X) <= 0
-                if (Fx <= 0) {
-
-                    var x_sub_c_len = vec2.length(x_sub_c);
-
-                    // compute contact point
-                    var cp = [0.0, 0.0];
-                    vec2.scaleAndAdd(
-                        cp,
-                        c,
-                        x_sub_c, (r / x_sub_c_len ));
-
-                    // compute normal.
-                    var n = [0.0, 0.0];
-                    vec2.scale(n, x_sub_c, -Math.sign(Fx) / ( x_sub_c_len  ))
-
-                    var prev = isNaN(iParticle.position[0]);
-
-                    // update particle due to collision
-                    iParticle.position = cp;
-                    this._reflect(iParticle.velocity, n);
-
-
-                    if (!prev && isNaN(iParticle.position[0])) {
-                        console.log("pos nan due to circle coll");
-                    }
-
-                }
-
-            } else if (body.type == CAPSULE_BODY) {
-                var p0 = body.p0;
-                var p1 = body.p1;
-                var r = body.radius;
-
-
-                var p1_sub_p0 = [0.0, 0.0];
-                vec2.subtract(p1_sub_p0, p1, p0);
-
-                var t = -vec2.dot(vec2.subtract(scratch, p0, x), p1_sub_p0) / vec2.dot(p1_sub_p0, p1_sub_p0);
-                t = clamp(t, 0.0, 1.0);
-
-
-                var q = [0.0, 0.0];
-                vec2.scaleAndAdd(q, p0, p1_sub_p0, t);
-
-                var Fx = vec2.length(vec2.subtract(scratch, q, x)) - r;
-
-                // check if collision
-                if (Fx <= 0) {
-
-
-                    var x_sub_q = [0.0, 0.0];
-                    vec2.subtract(x_sub_q, x, q);
-                    var x_sub_q_len = vec2.length(x_sub_q);
-
-                    // compute contact point
-                    var cp = [0.0, 0.0];
-                    vec2.scaleAndAdd(
-                        cp,
-                        q,
-                        x_sub_q, (r / x_sub_q_len ));
-
-                    // compute normal.
-                    var n = [0.0, 0.0];
-                    vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
-
-                    // update particle due to collision
-                    iParticle.position = cp;
-                    this._reflect(iParticle.velocity, n);
-                }
-            }
-        }
-    }
 }
 
 
@@ -468,7 +462,7 @@ Water.prototype.draw = function (gl) {
         var body = this.collisionBodies[i];
 
         if (body.type == CIRCLE_BODY)
-            this._circle([body.position[0] / WORLD_SCALE, body.position[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, 40);
+            this._circle([body.position[0] / WORLD_SCALE, body.position[1] / WORLD_SCALE],  body.radius / WORLD_SCALE, body.color, 40);
         else if (body.type == CAPSULE_BODY)
             this._capsule(
                 [body.p0[0] / WORLD_SCALE, body.p0[1] / WORLD_SCALE],
@@ -480,13 +474,14 @@ Water.prototype.draw = function (gl) {
         var particle = this.particles[i];
 
         this._circle(
-            [particle.position[0] / WORLD_SCALE, particle.position[1] / WORLD_SCALE], 2.5*(particle.radius / WORLD_SCALE),
+            [particle.position[0] / WORLD_SCALE, particle.position[1] / WORLD_SCALE], renderMult*(particle.radius / WORLD_SCALE),
 
             particle.color,
 //            [0.0, 0.0, 1.0],
 
             40);
     }
+
 
 
     gl.clearColor(0, 0, 0, 1);

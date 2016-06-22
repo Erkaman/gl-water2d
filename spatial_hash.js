@@ -69,6 +69,8 @@ SpatialHash.prototype.update = function (particles) {
     for(var iParticle = 0; iParticle < particles.length; ++iParticle) {
         var particle = particles[iParticle];
 
+        //console.log("add particle: ", particle,  particle.position );
+
         var gridPos = this._toGridPos( particle.position );
 
         if(gridPos[0] < 0 || gridPos[1] < 0 || gridPos[0] >= this.xSize || gridPos[1] >= this.ySize)
@@ -79,7 +81,7 @@ SpatialHash.prototype.update = function (particles) {
         if(a < 0 || a>= this.xSize*this.ySize)
             console.log("OUTSIDE index: ", a);
 
-     //   console.log("a: ", a);
+        //console.log("a: ", a);
         // TODO: should put index integer here, for better performance
 
 
