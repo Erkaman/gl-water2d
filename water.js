@@ -12,6 +12,9 @@ var clamp = require('clamp');
 var shaders = require("./shaders.js");
 var SpatialHash = require("./spatial_hash.js");
 
+var particleImage = require("./part.js");
+
+
 // collision body types:
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
@@ -28,7 +31,7 @@ var particleRadius = 0.015 * WORLD_SCALE;
 // support radius
 var h = particleRadius;
 
-var renderMult = 0.5; // 2.5
+var renderMult = 1.0; // 2.5
 
 var gravity = +0.03; // gravity force.
 var sigma = 0.9;
@@ -69,6 +72,12 @@ function Water(gl) {
     this.colorBufferObject = createBuffer(gl, [], gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
     this.uvBufferObject = createBuffer(gl, [], gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
     this.indexBufferObject = createBuffer(gl, [], gl.ELEMENT_ARRAY_BUFFER, gl.DYNAMIC_DRAW);
+
+
+
+    this.particleTexture = createTexture(gl, particleImage);
+   // this.particleTexture.magFilter = gl.LINEAR;
+  //  this.particleTexture.minFilter = gl.LINEAR;
 
 
 
@@ -146,8 +155,8 @@ function Particle(position, velocity) {
     this.velocity = vec2.fromValues(velocity[0] * WORLD_SCALE, velocity[1] * WORLD_SCALE);
 
    // console.log("add part: ", this.position );
-    this.color = [ 0.0, 0.0 ,getRandomArbitrary(0.95, 1.0)  ] ;
-  //  this.color = [ getRandomArbitrary(0.0, 1.0), getRandomArbitrary(0.0, 1.0) ,getRandomArbitrary(0.0, 1.0)  ] ;
+  //  this.color = [ 0.0, 0.0 ,getRandomArbitrary(0.95, 1.0)  ] ;
+    this.color = [ getRandomArbitrary(0.0, 1.0), getRandomArbitrary(0.0, 1.0) ,getRandomArbitrary(0.0, 1.0)  ] ;
 
     this.radius = particleRadius;
 
@@ -464,13 +473,21 @@ Water.prototype.draw = function (gl) {
 
         var particle = this.particles[i];
 
-        this._circle(
-            [particle.position[0] / WORLD_SCALE, particle.position[1] / WORLD_SCALE], renderMult*(particle.radius / WORLD_SCALE),
+        var p = [particle.position[0] / WORLD_SCALE, particle.position[1] / WORLD_SCALE];
+        var r =  renderMult*(particle.radius / WORLD_SCALE);
 
+        this._texturedBox([ p[0] - r, p[1] - r  ], [2*r, 2*r], particle.color);
+
+//        Water.prototype._box = function (position, size, color) {
+
+/*
+            this._circle(
+            p,r,
             particle.color,
 //            [0.0, 0.0, 1.0],
 
             40);
+        */
     }
 
 
@@ -516,6 +533,9 @@ Water.prototype.draw = function (gl) {
     this.shader.bind()
 
     this.shader.uniforms.uProj = projection;
+    this.shader.uniforms.uTex = this.particleTexture.bind();
+
+
     //this.shader.uniforms.uFontAtlas = this.fontAtlasTexture.bind()
 
     gl.disable(gl.DEPTH_TEST) // no depth testing; we handle this by manually placing out
@@ -560,11 +580,17 @@ Water.prototype._addUv = function (uv) {
  */
 Water.prototype._coloredVertex = function (position, color) {
     // at this uv-coordinate, the font atlas is entirely white.
-    var whiteUv = [0.95, 0.95];
+    var whiteUv = [2.0, 2.0];
 
     this._addPosition(position);
     this._addColor(color);
     this._addUv(whiteUv);
+};
+
+Water.prototype._texturedVertex = function (position, color, uv) {
+    this._addPosition(position);
+    this._addColor(color);
+    this._addUv(uv);
 };
 
 /*
@@ -574,6 +600,51 @@ Water.prototype._coloredVertex = function (position, color) {
  the optional `alpha` argument specifies the transparency of the box.
  default value of `alpha` is 1.0
  */
+Water.prototype._texturedBox = function (position, size, color) {
+
+
+    if (typeof alpha === 'undefined') {
+        alpha = 1.0; // default to 1.0
+    }
+
+    // top-left, bottom-left, top-right, bottom-right corners
+    var tl = position;
+    var bl = [position[0], position[1] + size[1]];
+    var tr = [position[0] + size[0], position[1]];
+    var br = [position[0] + size[0], position[1] + size[1]];
+
+    var baseIndex = this.positionBufferIndex / 2;
+
+    var c = [color[0], color[1], color[2], alpha];
+
+    // vertex 1
+    //this._coloredVertex(tl, c);
+    this._texturedVertex(tl, c, [0.0, 0.0] );
+
+    // vertex 2
+    //this._coloredVertex(bl, c);
+    this._texturedVertex(bl, c, [0.0, 1.0] );
+
+    // vertex 3
+  //  this._coloredVertex(tr, c);
+    this._texturedVertex(tr, c, [1.0, 0.0] );
+
+
+    // vertex 4
+//    this._coloredVertex(br, c);
+    this._texturedVertex(br, c, [1.0, 1.0] );
+
+    // triangle 1
+    this._addIndex(baseIndex + 0);
+    this._addIndex(baseIndex + 1);
+    this._addIndex(baseIndex + 2);
+
+    // triangle 2
+    this._addIndex(baseIndex + 3);
+    this._addIndex(baseIndex + 2);
+    this._addIndex(baseIndex + 1);
+};
+
 Water.prototype._box = function (position, size, color) {
 
 
@@ -600,9 +671,9 @@ Water.prototype._box = function (position, size, color) {
     // vertex 3
     this._coloredVertex(tr, c);
 
+
     // vertex 4
     this._coloredVertex(br, c);
-
 
     // triangle 1
     this._addIndex(baseIndex + 0);
@@ -613,7 +684,6 @@ Water.prototype._box = function (position, size, color) {
     this._addIndex(baseIndex + 3);
     this._addIndex(baseIndex + 2);
     this._addIndex(baseIndex + 1);
-
 };
 
 Water.prototype._unitCircle = function (position, theta, radius) {

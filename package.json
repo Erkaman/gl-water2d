@@ -15,9 +15,11 @@
     "gl-mat4": "^1.1.4",
     "gl-now": "^1.4.0",
     "gl-shader": "^4.2.0",
+    "gl-texture2d": "^2.0.10",
     "gl-vec2": "^1.0.0",
     "gl-vec3": "^1.0.3",
     "glslify": "^5.0.2",
+    "ndpack-image": "^2.0.0",
     "pnp-gui": "0.0.3",
     "sieve": "0.0.4"
   },
