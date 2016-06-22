@@ -16,44 +16,36 @@ var SpatialHash = require("./spatial_hash.js");
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
 
-var WORLD_MIN = [-0.9, -0.5];
-var WORLD_MAX = [+0.9, +0.8];
+var WORLD_MIN = [-0.5, -0.5];
+var WORLD_MAX = [+0.5, +0.8];
 var WORLD_SCALE = 260.0;
 
 var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
-var particleRadius = 0.035 * WORLD_SCALE;
+var particleRadius = 0.015 * WORLD_SCALE;
 
 // support radius
-var h = 0.035 * WORLD_SCALE;
+var h = particleRadius;
 
 var renderMult = 0.5; // 2.5
 
 var gravity = +0.03; // gravity force.
-var sigma = 0.8;
-var beta = 0.5;
+var sigma = 0.9;
+var beta = 0.3;
 
 var wallDamp = 1.0 / 5.0;
 
-
-const rho_0 = 9.0 // rest density
+const rho_0 = 10.0; // rest density
 //const l = 0.08
 //const k = 0.008*(1-l) + (0.08)*(l); // gas stiffness constant.
-const k = 0.07;
-const k_near = 7.0; // gas stiffness for near.
+const k = 0.009;
+const k_near = 0.8; // gas stiffness for near.
 /*
 const kSurfaceTension = 0.0004;
 const kLinearViscocity = 0.5;
 const kQuadraticViscocity = 1.0;
 */
-
-
-const kNorm = (20.0/(2.0*Math.PI*h*h));
-const kNearNorm = (30.0/(2.0*Math.PI*h*h));
-
-const kappa = 0.2; // surface tension.
-
 
 
 var cr = 0.7;
@@ -102,8 +94,8 @@ function Water(gl) {
 
 
 
-    for (var y = -0.2; y < 0.45; y += 0.028) {
-        for (var x = -0.2; x < +0.5; x += 0.028) {
+    for (var y = -0.2; y < 0.45; y += 0.020) {
+        for (var x = -0.2; x < +0.5; x += 0.020) {
             this.particles.push(new Particle([x, y], [0.0, 0.0]));
         }
     }
@@ -154,8 +146,8 @@ function Particle(position, velocity) {
     this.velocity = vec2.fromValues(velocity[0] * WORLD_SCALE, velocity[1] * WORLD_SCALE);
 
    // console.log("add part: ", this.position );
-   // this.color = [ 0.0, 0.0 ,getRandomArbitrary(0.7, 1.0)  ] ;
-    this.color = [ getRandomArbitrary(0.0, 1.0), getRandomArbitrary(0.0, 1.0) ,getRandomArbitrary(0.0, 1.0)  ] ;
+    this.color = [ 0.0, 0.0 ,getRandomArbitrary(0.95, 1.0)  ] ;
+  //  this.color = [ getRandomArbitrary(0.0, 1.0), getRandomArbitrary(0.0, 1.0) ,getRandomArbitrary(0.0, 1.0)  ] ;
 
     this.radius = particleRadius;
 
@@ -219,7 +211,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
         //var diff = vec2.create();
         vec2.subtract( iParticle.velocity, iParticle.position, iParticle.o);
-
 
         iParticle.velocity[1] += gravity;
 
