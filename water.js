@@ -43,7 +43,9 @@ const rho_0 = 10.0; // rest density
 //const l = 0.08
 //const k = 0.008*(1-l) + (0.08)*(l); // gas stiffness constant.
 const k = 0.009;
-const k_near = 0.8; // gas stiffness for near.
+
+// set to 0.8 for less splash.
+const k_near = 1.2; // gas stiffness for near.
 /*
 const kSurfaceTension = 0.0004;
 const kLinearViscocity = 0.5;
@@ -51,7 +53,7 @@ const kQuadraticViscocity = 1.0;
 */
 
 
-var cr = 0.7;
+var cr = 0.0;
 
 
 /*
@@ -102,11 +104,19 @@ function Water(gl) {
     this.particles = [];
 
 
+    var add = 0;
 
-    for (var y = -0.2; y < 0.45; y += 0.020) {
-        for (var x = -0.2; x < +0.5; x += 0.020) {
-            this.particles.push(new Particle([x, y], [0.0, 0.0]));
+    for (var y = -0.3; y < 0.35; y += 0.020) {
+        for (var x = -0.4; x < +0.3; x += 0.020) {
+            this.particles.push(new Particle([x + add, y], [0.0, 0.0]));
         }
+
+        if(add > 0) {
+            add = 0;
+        } else {
+            add = +0.05;
+        }
+
     }
 
 
@@ -179,8 +189,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
-
-
     for (var i = 0; i < this.particles.length; ++i) {
         var iParticle = this.particles[i];
         var p = iParticle.position;
@@ -197,6 +205,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             --i;
         }
     }
+
 
 
 
@@ -227,7 +236,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         // do viscosisity.
-
 
 
         var nearParticles = this.hash.getNearParticles(iParticle);
@@ -315,8 +323,10 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
         // SCALED_WORLD_MAX
 
+
         const pad = 15;
 
+        /*
         if(iParticle.position[1] > SCALED_WORLD_MAX[1]-pad) {
             iParticle.position[1] += ( SCALED_WORLD_MAX[1]-pad - iParticle.position[1]   ) * wallDamp;
         }
@@ -329,6 +339,73 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
         else if(iParticle.position[1] < SCALED_WORLD_MIN[1]+5) {
             iParticle.position[1] += ( SCALED_WORLD_MIN[1]+pad - iParticle.position[1]   ) * wallDamp;
         }
+        */
+
+
+
+
+        for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
+
+            var body = this.collisionBodies[iBody];
+
+            var x = iParticle.position;
+            var scratch = vec2.create();
+
+
+           if (body.type == CAPSULE_BODY) {
+                var p0 = body.p0;
+                var p1 = body.p1;
+                var r = body.radius;
+
+
+                var p1_sub_p0 = [0.0, 0.0];
+                vec2.subtract(p1_sub_p0, p1, p0);
+
+                var t = -vec2.dot(vec2.subtract(scratch, p0, x), p1_sub_p0) / vec2.dot(p1_sub_p0, p1_sub_p0);
+                t = clamp(t, 0.0, 1.0);
+
+
+                var q = [0.0, 0.0];
+                vec2.scaleAndAdd(q, p0, p1_sub_p0, t);
+
+                var Fx = vec2.length(vec2.subtract(scratch, q, x)) - r;
+
+                // check if collision
+                if (Fx <= 0) {
+
+
+                    var x_sub_q = [0.0, 0.0];
+                    vec2.subtract(x_sub_q, x, q);
+                    var x_sub_q_len = vec2.length(x_sub_q);
+
+                    // compute contact point
+                    var cp = [0.0, 0.0];
+                    vec2.scaleAndAdd(
+                        cp,
+                        q,
+                        x_sub_q, (r / x_sub_q_len ));
+
+                    // compute normal.
+                    var n = [0.0, 0.0];
+                    vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
+
+                    // update particle due to collision
+                    //iParticle.position = cp;
+                    //this._reflect(iParticle.velocity, n);
+
+                    vec2.scaleAndAdd( iParticle.position, iParticle.position, n, -Fx*wallDamp  );
+
+                    // = cp;
+
+                }
+            }
+        }
+
+
+
+
+
+
 
 
         var nearParticles = this.hash.getNearParticles(iParticle);
