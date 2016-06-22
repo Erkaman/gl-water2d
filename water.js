@@ -455,7 +455,9 @@ Water.prototype.draw = function (gl) {
     var WORLD_SCALE = 50.0;
 */
 
-    this._box([-1.6, -0.8], [3.2, 1.7], [1.0, 1.0, 1.0]);
+
+
+    // this._box([-1.6, -0.8], [3.2, 1.7], [1.0, 1.0, 1.0]);
 
     for (var i = 0; i < this.collisionBodies.length; ++i) {
 
@@ -468,6 +470,7 @@ Water.prototype.draw = function (gl) {
                 [body.p0[0] / WORLD_SCALE, body.p0[1] / WORLD_SCALE],
                 [body.p1[0] / WORLD_SCALE, body.p1[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, 40);
     }
+
 
     for (var i = 0; i < this.particles.length; ++i) {
 
@@ -543,7 +546,8 @@ Water.prototype.draw = function (gl) {
 
     // for text rendering, enable alpha blending.
     gl.enable(gl.BLEND)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+   // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFunc(gl.ONE, gl.ONE)
 
     gl.drawElements(gl.TRIANGLES, (this.indexBufferIndex), gl.UNSIGNED_SHORT, 0);
 
@@ -715,6 +719,7 @@ Water.prototype._capsule = function (p1, p2, radius, color, segments) {
     var baseIndex = this.positionBufferIndex / 2;
 
 
+    var alpha = 1.0;
     var c = [color[0], color[1], color[2], alpha];
 
     // vertex 1
