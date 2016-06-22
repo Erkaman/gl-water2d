@@ -19,8 +19,8 @@ var particleImage = require("./part.js");
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
 
-var WORLD_MIN = [-0.5, -0.5];
-var WORLD_MAX = [+0.5, +0.8];
+var WORLD_MIN = [-0.6, -0.6];
+var WORLD_MAX = [+0.6, +0.9];
 var WORLD_SCALE = 260.0;
 
 var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
@@ -106,6 +106,7 @@ function Water(gl) {
 
     var add = 0;
 
+    /*
     for (var y = -0.3; y < 0.35; y += 0.020) {
         for (var x = -0.4; x < +0.3; x += 0.020) {
             this.particles.push(new Particle([x + add, y], [0.0, 0.0]));
@@ -116,21 +117,9 @@ function Water(gl) {
         } else {
             add = +0.05;
         }
-
     }
+    */
 
-
-/*
-   this.particles.push(new Particle([-0.25, -0.2], [0.0, 0.0]));
-    this.particles.push(new Particle([-0.2, 0.2], [0.0, 0.0]));
-*/
-
-    // console.log("count: ",  this.particles.length );
-
-    //this.particles.push(new Particle([0.11, 0.1], 0.006));
-    //this.particles.push(new Particle([0.11, 0.15], 0.006));
-    //  this.particles.push(new Particle([0.11, 0.2], 0.006));
-//    this.particles.push(new Particle([-0.1, -0.4], 0.01));
 
     this.collisionBodies = [];
 
@@ -141,11 +130,25 @@ function Water(gl) {
 
     // frame
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([WORLD_MIN[0], WORLD_MAX[1]], WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
+
+    this.collisionBodies.push(new Capsule([WORLD_MIN[0]*0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
+//    this.collisionBodies.push(new Capsule([WORLD_MIN[0], WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
+
+
+
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
+
     this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
 
-    this.collisionBodies.push(new Capsule([-0.1, 0.6], [0.1, 0.5], 0.03, FRAME_COLOR));
+    //this.collisionBodies.push(new Capsule([-0.1, 0.6], [0.1, 0.5], 0.03, FRAME_COLOR));
+
+    this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], 0.03, FRAME_COLOR));
+
+    this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], 0.03, FRAME_COLOR));
+
+    // x plus, y mins
+    this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], 0.03, FRAME_COLOR));
+
 
     this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
     this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
@@ -174,6 +177,7 @@ function Particle(position, velocity) {
 
     this.o = [this.position[0], this.position[1]];
     this.f = [0.0, 0.0];
+    this.isNew = true;
 
 
 
@@ -190,6 +194,21 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
+
+
+    if(count % 2 == 0 && this.particles.length < 800) {
+
+        const MIN_Y_VEL = -0.0095;
+        const MAX_Y_VEL = -0.0090;
+
+        this.particles.push(new Particle([-0.1, 0.0], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL) ]));
+
+        this.particles.push(new Particle([-0.1, 0.01], [0.003,getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)   ]));
+
+        this.particles.push(new Particle([-0.1, 0.02], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)  ]));
+
+    }
+
 
     for (var i = 0; i < this.particles.length; ++i) {
         var iParticle = this.particles[i];
@@ -230,7 +249,10 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         //var diff = vec2.create();
-        vec2.subtract( iParticle.velocity, iParticle.position, iParticle.o);
+        if(!iParticle.isNew)
+            vec2.subtract( iParticle.velocity, iParticle.position, iParticle.o);
+
+        iParticle.isNew = false;
 
         iParticle.velocity[1] += gravity;
 
