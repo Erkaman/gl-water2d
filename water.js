@@ -14,7 +14,6 @@ var SpatialHash = require("./spatial_hash.js");
 
 var particleImage = require("./part.js");
 
-
 // collision body types:
 const CIRCLE_BODY = 0;
 const CAPSULE_BODY = 1;
@@ -132,28 +131,19 @@ function Water(gl) {
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, FRAME_COLOR));
 
     this.collisionBodies.push(new Capsule([WORLD_MIN[0]*0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
-//    this.collisionBodies.push(new Capsule([WORLD_MIN[0], WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
-
-
 
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
 
     this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
 
-    //this.collisionBodies.push(new Capsule([-0.1, 0.6], [0.1, 0.5], 0.03, FRAME_COLOR));
-
     this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], 0.03, FRAME_COLOR));
 
     this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], 0.03, FRAME_COLOR));
-
-    // x plus, y mins
     this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], 0.03, FRAME_COLOR));
 
 
     this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
     this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
-
-   // this.collisionBodies.push(new Capsule([+0.05, 0.0], [+0.05, +0.4], FRAME_RADIUS, FRAME_COLOR));
 
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
 }
@@ -425,13 +415,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
             }
         }
 
-
-
-
-
-
-
-
+        
         var nearParticles = this.hash.getNearParticles(iParticle);
 
         for (var j = 0; j < nearParticles.length; ++j) {
@@ -478,11 +462,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         var nearParticles = this.hash.getNearParticles(iParticle);
-
-
-        //var sum = [iParticle.position[0], iParticle.position[1] ];
-
-
+        
         for (var j = 0; j < nearParticles.length; ++j) {
 
 
@@ -501,10 +481,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
             var r = Math.sqrt(r2);
             var a = 1 - r/h;
-
-           // var d = delta*delta * ((iParticle.nearP+jParticle.nearP)*a*a*a*kNearNorm + (iParticle.P*jParticle.P)*a*a*kNorm) / 2;
-
-
+            
             var D = ( pressure * a + nearPressure * a * a ) * 0.5;
 
             var DA = [0.0, 0.0];
@@ -519,9 +496,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
         }
-
-       // iParticle.relaxedPosition = [sum[0], sum[1]];
-
     }
 
 
@@ -529,9 +503,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 
 
 Water.prototype.draw = function (gl) {
-
-
-
 
     /*
      Setup geometry buffers.
@@ -550,15 +521,6 @@ Water.prototype.draw = function (gl) {
     /*
      Create geometry.
      */
-/*
-    var WORLD_MIN = [-0.75, -0.5];
-    var WORLD_MAX = [+0.75, +0.7];
-    var WORLD_SCALE = 50.0;
-*/
-
-
-
-    // this._box([-1.6, -0.8], [3.2, 1.7], [1.0, 1.0, 1.0]);
 
     for (var i = 0; i < this.collisionBodies.length; ++i) {
 
@@ -581,20 +543,7 @@ Water.prototype.draw = function (gl) {
         var r =  renderMult*(particle.radius / WORLD_SCALE);
 
         this._texturedBox([ p[0] - r, p[1] - r  ], [2*r, 2*r], particle.color);
-
-//        Water.prototype._box = function (position, size, color) {
-
-/*
-            this._circle(
-            p,r,
-            particle.color,
-//            [0.0, 0.0, 1.0],
-
-            40);
-        */
     }
-
-
 
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -647,7 +596,6 @@ Water.prototype.draw = function (gl) {
 
     // for text rendering, enable alpha blending.
     gl.enable(gl.BLEND)
-   // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     gl.blendFunc(gl.ONE, gl.ONE)
 
     gl.drawElements(gl.TRIANGLES, (this.indexBufferIndex), gl.UNSIGNED_SHORT, 0);
