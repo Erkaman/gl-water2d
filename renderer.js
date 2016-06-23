@@ -28,7 +28,7 @@ function Mesh(gl) {
     this.indexBufferObject = createBuffer(gl, [], gl.ELEMENT_ARRAY_BUFFER, gl.DYNAMIC_DRAW);
 }
 
-Mesh.prototype.prepareForRender = function() {
+Mesh.prototype.prepareForRender = function () {
     /*
      Setup geometry buffers.
      */
@@ -42,16 +42,13 @@ Mesh.prototype.prepareForRender = function() {
     this.colorBufferIndex = 0;
     this.uvBufferIndex = 0;
 
-    console.log("prepare: ", this.indexBufferIndex);
-
 }
 
-Mesh.prototype.draw = function(gl) {
- console.log("draw: ", this.indexBufferIndex);
+Mesh.prototype.draw = function (gl) {
     gl.drawElements(gl.TRIANGLES, (this.indexBufferIndex), gl.UNSIGNED_SHORT, 0);
 }
 
-Mesh.prototype.updateBuffers = function(gl, shader) {
+Mesh.prototype.updateBuffers = function (gl, shader) {
 
     this.positionBufferObject.update(this.positionBuffer);
     gl.enableVertexAttribArray(shader.attributes.aPosition.location);
@@ -77,11 +74,10 @@ Mesh.prototype._addIndex = function (index) {
     this.indexBuffer[this.indexBufferIndex++] = index;
 };
 
-Mesh.prototype.update = function(canvasWidth, canvasHeight) {
+Mesh.prototype.update = function (canvasWidth, canvasHeight) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 }
-
 
 
 Mesh.prototype._addPosition = function (position) {
@@ -124,7 +120,6 @@ Mesh.prototype._texturedVertex = function (position, color, uv) {
 };
 
 
-
 function Renderer(gl) {
 
     /*
@@ -132,7 +127,8 @@ function Renderer(gl) {
      */
     this.shader = createShader(gl, shaders.vert, shaders.frag);
 
-    this.mesh = new Mesh(gl);
+    this.meshParticles = new Mesh(gl);
+    this.meshOther = new Mesh(gl);
 
     this.particleTexture = createTexture(gl, particleImage);
 
@@ -142,56 +138,58 @@ Renderer.prototype.update = function (canvasWidth, canvasHeight) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
-    this.mesh.update(canvasWidth, canvasHeight);
+
+    this.meshOther.update(canvasWidth, canvasHeight);
+    this.meshParticles.update(canvasWidth, canvasHeight);
+
 }
 
 
-Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule, emitters) {
+Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, emitters) {
 
 
 
     /*
      Create geometry.
      */
-    this.mesh.prepareForRender();
+    this.meshOther.prepareForRender();
+    this.meshParticles.prepareForRender();
 
     for (var i = 0; i < collisionBodies.length; ++i) {
 
         var body = collisionBodies[i];
 
         this._capsule(
-            this.mesh,
-                [body.p0[0] / WORLD_SCALE, body.p0[1] / WORLD_SCALE],
-                [body.p1[0] / WORLD_SCALE, body.p1[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, CAPSULE_SEGMENTS);
+            this.meshOther,
+            [body.p0[0] / WORLD_SCALE, body.p0[1] / WORLD_SCALE],
+            [body.p1[0] / WORLD_SCALE, body.p1[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, CAPSULE_SEGMENTS);
     }
-    if(newCapsule != null) {
+    if (newCapsule != null) {
         this._capsule(
-            this.mesh,
+            this.meshOther,
             [newCapsule.p0[0] / WORLD_SCALE, newCapsule.p0[1] / WORLD_SCALE],
             [newCapsule.p1[0] / WORLD_SCALE, newCapsule.p1[1] / WORLD_SCALE], newCapsule.radius / WORLD_SCALE, newCapsule.color, CAPSULE_SEGMENTS);
     }
-
-
     for (var i = 0; i < emitters.length; ++i) {
 
         var emitter = emitters[i];
 
         var p = emitter.position;
         var r = emitter.radius;
-        
-        this._circle(this.mesh, p, r, [1.0, 0.0, 0.0], 20);
+
+        this._circle(this.meshOther, p, r, [1.0, 0.0, 0.0], 20);
     }
 
 
 
-        for (var i = 0; i < particles.length; ++i) {
+    for (var i = 0; i < particles.length; ++i) {
 
         var particle = particles[i];
 
         var p = [particle.position[0] / WORLD_SCALE, particle.position[1] / WORLD_SCALE];
-        var r =  renderMult*(particle.radius / WORLD_SCALE);
+        var r = renderMult * (particle.radius / WORLD_SCALE);
 
-        this._texturedBox(this.mesh, [ p[0] - r, p[1] - r  ], [2*r, 2*r], particle.color);
+        this._texturedBox(this.meshParticles, [p[0] - r, p[1] - r], [2 * r, 2 * r], particle.color);
     }
 
 
@@ -208,8 +206,6 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule, e
         VAO_ext.bindVertexArrayOES(null);
 
 
-    this.mesh.updateBuffers(gl, this.shader);
-
 
     /*
      Setup matrices.
@@ -222,18 +218,20 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule, e
     this.shader.uniforms.uProj = projection;
     this.shader.uniforms.uTex = this.particleTexture.bind();
 
-
-    //this.shader.uniforms.uFontAtlas = this.fontAtlasTexture.bind()
-
     gl.disable(gl.DEPTH_TEST) // no depth testing; we handle this by manually placing out
-    // widgets in the order we wish them to be rendered.
+    // geometry in the order we wish them to be rendered.
+    
+    // for rendering everything but the particle, we don't want any alpha blending.
+    // so in the first pass, render everything but particles.
+    gl.disable(gl.BLEND)
+    this.meshOther.updateBuffers(gl, this.shader);
+    this.meshOther.draw(gl);
 
-    // for text rendering, enable alpha blending.
+    // now render particles with alpha blending.
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.ONE, gl.ONE)
-
-    this.mesh.draw(gl);
-
+    this.meshParticles.updateBuffers(gl, this.shader);
+    this.meshParticles.draw(gl);
 };
 
 
@@ -263,20 +261,20 @@ Renderer.prototype._texturedBox = function (mesh, position, size, color) {
 
     // vertex 1
     //this._coloredVertex(tl, c);
-    mesh._texturedVertex(tl, c, [0.0, 0.0] );
+    mesh._texturedVertex(tl, c, [0.0, 0.0]);
 
     // vertex 2
     //this._coloredVertex(bl, c);
-    mesh._texturedVertex(bl, c, [0.0, 1.0] );
+    mesh._texturedVertex(bl, c, [0.0, 1.0]);
 
     // vertex 3
     //  this._coloredVertex(tr, c);
-    mesh._texturedVertex(tr, c, [1.0, 0.0] );
+    mesh._texturedVertex(tr, c, [1.0, 0.0]);
 
 
     // vertex 4
 //    this._coloredVertex(br, c);
-    mesh._texturedVertex(br, c, [1.0, 1.0] );
+    mesh._texturedVertex(br, c, [1.0, 1.0]);
 
     // triangle 1
     mesh._addIndex(baseIndex + 0);
