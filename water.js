@@ -525,7 +525,7 @@ Water.prototype.removeCapsule = function (mousePos) {
     // this.canvasHeight = canvasHeight;
 }
 
-Water.prototype.addCapsule = function (mousePos) {
+Water.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
     if(this.newCapsule != null) {
         // add the capsule.
@@ -536,7 +536,7 @@ Water.prototype.addCapsule = function (mousePos) {
     } else {
         // make new capsule.
         var mMousePos = this.mapMousePos(mousePos);
-        this.newCapsule = new Capsule([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE], [0.0, 0.0], CAPSULE_RADIUS, FRAME_COLOR);
+        this.newCapsule = new Capsule([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE], [0.0, 0.0], capsuleRadius, FRAME_COLOR);
 
         this.newCapsule.p1 = this.mapMousePos(mousePos);
     }

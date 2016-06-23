@@ -24,6 +24,7 @@ const EM_ADD_CAPSULE = 1;
 
 var editMode = {val: EM_ADD_CAPSULE};
 
+var capsuleRadius = {val: 0.05};
 
 shell.on("gl-init", function () {
     var gl = shell.gl;
@@ -85,6 +86,14 @@ shell.on("gl-render", function (t) {
 
     gui.radioButton("Add Capsule", editMode, EM_ADD_CAPSULE);
 
+    gui.separator();
+
+    gui.textLine("Edit Mode Settings");
+
+    if(editMode.val == EM_ADD_CAPSULE) {
+        gui.sliderFloat("Capsule Radius", capsuleRadius, 0.02, 0.06);
+    }
+
 
     gui.end(gl, canvas.width, canvas.height);
 
@@ -106,7 +115,7 @@ shell.on("tick", function () {
         if (editMode.val == EM_REMOVE_CAPSULE) {
             water.removeCapsule(shell.mouse);
         } else if (editMode.val == EM_ADD_CAPSULE) {
-            water.addCapsule(shell.mouse);
+            water.addCapsule(shell.mouse, capsuleRadius.val);
         }
 
         clicked = true;
