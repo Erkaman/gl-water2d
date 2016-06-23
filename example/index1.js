@@ -57,7 +57,7 @@ shell.on("gl-render", function (t) {
 
 
     water.draw(gl);
-    /*
+
     var pressed = shell.wasDown("mouse-left");
     var io = {
         mouseLeftDownCur: pressed,
@@ -77,7 +77,7 @@ shell.on("gl-render", function (t) {
 
 
     gui.end(gl, canvas.width, canvas.height);
-    */
+
 });
 
 
@@ -87,6 +87,12 @@ shell.on("tick", function () {
     // if interacting with the GUI, do not let the mouse control the camera.
     if (gui.hasMouseFocus())
         return;
+
+    if(shell.wasDown("mouse-left")) {
+
+        water.deleteCapsule(shell.mouse)
+        
+    }
     
     /*
     HANDLE MOUSE INPUT

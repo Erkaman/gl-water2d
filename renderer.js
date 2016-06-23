@@ -16,9 +16,6 @@ var renderMult = dt.renderMult;
 var vec2 = require('gl-vec2');
 var vec3 = require('gl-vec3');
 
-
-
-
 function Renderer(gl) {
 
     /*
@@ -151,7 +148,7 @@ Renderer.prototype._addIndex = function (index) {
 Renderer.prototype._addPosition = function (position) {
 
     var x = ((position[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
-    var y = 1.0 * (((position[1] + 1) / 2.0) * this.canvasHeight);
+    var y = (((position[1] + 1) / 2.0) * this.canvasHeight);
 
     this.positionBuffer[this.positionBufferIndex++] = x
     this.positionBuffer[this.positionBufferIndex++] = y;
