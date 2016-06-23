@@ -13,7 +13,6 @@ var mouseLeftDownPrev = false;
 var pressed;
 var io;
 
-
 var bg = [0.6, 0.7, 1.0]; // clear color.
 
 var water;
@@ -23,8 +22,11 @@ const EM_REMOVE_CAPSULE = 0;
 const EM_ADD_CAPSULE = 1;
 const EM_ADD_EMITTER = 2;
 const EM_REMOVE_EMITTER = 3;
+const EM_EDIT_EMITTER = 4;
 
 var editMode = {val: EM_ADD_CAPSULE};
+
+var editEmitter = null; // the emitter being edited.
 
 var capsuleRadius = {val: 0.05};
 
@@ -79,6 +81,7 @@ shell.on("gl-render", function (t) {
     gui.radioButton("Add Capsule", editMode, EM_ADD_CAPSULE);
     gui.radioButton("Add Emitter", editMode, EM_ADD_EMITTER);
     gui.radioButton("Remove Emitter", editMode, EM_REMOVE_EMITTER);
+    gui.radioButton("Edit Emitter", editMode, EM_EDIT_EMITTER);
 
     gui.separator();
 
@@ -87,6 +90,17 @@ shell.on("gl-render", function (t) {
     if(editMode.val == EM_ADD_CAPSULE) {
         gui.textLine("Right click to cancel");
         gui.sliderFloat("Capsule Radius", capsuleRadius, 0.02, 0.06);
+    }else if(editMode.val == EM_EDIT_EMITTER) {
+
+        if(editEmitter == null) {
+            gui.textLine("Please select an emitter");
+        } else {
+            gui.textLine("Editing");
+
+            gui.draggerRgb("Ambient Light", editEmitter.color);
+
+        }
+
     }
 
     gui.end(gl, canvas.width, canvas.height);
@@ -117,6 +131,13 @@ shell.on("tick", function () {
             water.addEmitter(shell.mouse);
         }else if (editMode.val == EM_REMOVE_EMITTER) {
             water.removeEmitter(shell.mouse);
+        }else if (editMode.val == EM_EDIT_EMITTER) {
+            var e = water.selectEmitter(shell.mouse);
+
+            if(e != null) {
+                editEmitter = e;
+            }
+
         }
 
         leftClicked = true;

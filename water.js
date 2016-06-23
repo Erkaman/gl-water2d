@@ -205,15 +205,20 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
 
             const MIN_Y_VEL = -0.0095;
             const MAX_Y_VEL = -0.0090;
-
-
+            
             for(var j = 0; j < 3; ++j) {
 
                 var y = emitter.position[1] + j*0.01;
                 var x = emitter.position[0];
 
+                var c = emitter.color;
+
                 this.particles.push(new Particle(
-                    [x, y], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)], emitter.color ));
+                    [x, y], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)],
+
+                    [ c[0], c[1], c[2] ]
+
+                ));
 
             }
 
@@ -573,26 +578,39 @@ Water.prototype.addEmitter = function(mousePos) {
     this.emitters.push(new Emitter([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]  , 0.05));
 }
 
-Water.prototype.removeEmitter = function(mousePos) {
+// return index of emitter under the cursor.
+Water.prototype.findEmitter = function(mousePos) {
 
     var mMousePos = this.mapMousePos(mousePos);
 
     for (var i = 0; i < this.emitters.length; ++i) {
-
         var emitter = this.emitters[i];
-
-
         var Fx = emitter.eval([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]);
-
-        console.log("fx: ", Fx);
         if(Fx <= 0) {
-            this.emitters.splice(i, 1);
-            --i;
+            return i;
         }
+    }
+
+    return -1;
+}
 
 
+Water.prototype.removeEmitter = function(mousePos) {
+    var i = this.findEmitter(mousePos);
+    if(i != -1) {
+        this.emitters.splice(i, 1);
     }
 }
+
+Water.prototype.selectEmitter = function(mousePos) {
+    var i = this.findEmitter(mousePos);
+    if(i != -1) {
+        return this.emitters[i]
+    } else {
+        return null;
+    }
+}
+
 
 
 Water.prototype.cancelAddCapsule = function () {
