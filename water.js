@@ -76,7 +76,11 @@ function Emitter(position, frequency) {
     this.color = [0.0, 0.0, 1.0];
 
 
-    this.angle = {val: 70};
+    this.baseAngle = {val: 70};
+    this.angleVelocity = {val: 0};
+    this.angle = {val: 0};
+
+
     this.strength = {val: 0.006};
     this.velRand= {val: 2};
 
@@ -169,7 +173,7 @@ function Water(gl) {
     this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, FRAME_COLOR));
     this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, FRAME_COLOR));
 
-    this.emitters.push(new Emitter([-0.1, 0.0]));
+    this.emitters.push(new Emitter([-0.1, -0.15]));
 
 
     // this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
@@ -209,10 +213,22 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
 
         if(emitter.timer > emitter.frequency.val && this.particles.length < 1500) {
 
+
+
             var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
+
+            if(emitter.angleVelocity.val == 0) {
+                emitter.angle.val = emitter.baseAngle.val;
+            } else {
+                emitter.angle.val += emitter.angleVelocity.val;
+            }
+
+
 
             var theta = emitter.angle.val * (Math.PI / 180.0);
             theta = Math.PI * 2 - theta;
+
+            emitter.angle.val += emitter.angleVelocity.val;
 
             const strength = emitter.strength.val;
             const velocity = [strength * Math.cos(theta), strength * Math.sin(theta)];

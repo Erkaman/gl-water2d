@@ -99,11 +99,12 @@ shell.on("gl-render", function (t) {
 
             gui.draggerRgb("Color", editEmitter.color);
             gui.sliderFloat("Frequency", editEmitter.frequency, 0.01, 0.3 );
-            gui.sliderInt("Angle", editEmitter.angle, 0, 360);
+            gui.sliderInt("Angle", editEmitter.baseAngle, 0, 360);
+            gui.sliderInt("Angle Velocity", editEmitter.angleVelocity, 0, 80);
+
             gui.sliderFloat("Strength", editEmitter.strength, 0.001, 0.02);
 
-            gui.sliderInt("Velocity Random", editEmitter.velRand, 0, 30);
-   //                                                                       0.0002
+            gui.sliderInt("Velocity Randomness", editEmitter.velRand, 0, 30);
 
         }
 
