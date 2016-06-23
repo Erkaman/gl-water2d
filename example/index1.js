@@ -21,6 +21,8 @@ var water;
 // edit modes
 const EM_REMOVE_CAPSULE = 0;
 const EM_ADD_CAPSULE = 1;
+const EM_ADD_EMITTER = 2;
+const EM_REMOVE_EMITTER = 3;
 
 var editMode = {val: EM_ADD_CAPSULE};
 
@@ -74,8 +76,9 @@ shell.on("gl-render", function (t) {
     gui.textLine("Edit Mode");
 
     gui.radioButton("Remove Capsule", editMode, EM_REMOVE_CAPSULE);
-
     gui.radioButton("Add Capsule", editMode, EM_ADD_CAPSULE);
+    gui.radioButton("Add Emitter", editMode, EM_ADD_EMITTER);
+    gui.radioButton("Remove Emitter", editMode, EM_REMOVE_EMITTER);
 
     gui.separator();
 
@@ -110,6 +113,8 @@ shell.on("tick", function () {
             water.removeCapsule(shell.mouse);
         } else if (editMode.val == EM_ADD_CAPSULE) {
             water.addCapsule(shell.mouse, capsuleRadius.val);
+        }else if (editMode.val == EM_ADD_EMITTER) {
+            water.addEmitter(shell.mouse);
         }
 
         leftClicked = true;
@@ -125,16 +130,12 @@ shell.on("tick", function () {
         rightClicked = true;
     }
 
-
-
     if(leftDown==false) {
         leftClicked = false;
     }
     if(rightDown==false) {
         rightClicked = false;
     }
-
-
     
     /*
     HANDLE MOUSE INPUT

@@ -50,7 +50,6 @@ function Emitter(position, frequency) {
     this.timer = 0.0;
     this.radius = 0.015;
     this.color = [0.0, 0.0, 1.0];
-
 }
 
 
@@ -152,8 +151,8 @@ function Water(gl) {
     this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, FRAME_COLOR));
     this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, FRAME_COLOR));
 
-
     this.emitters.push(new Emitter([-0.1, 0.0], 0.05));
+
 
     // this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
     //   this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
@@ -190,7 +189,7 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
 
        // console.log("timer: ",  emitter.timer, emitter.frequency );
 
-        if(emitter.timer > emitter.frequency && this.particles.length < 800) {
+        if(emitter.timer > emitter.frequency && this.particles.length < 1500) {
 
             const MIN_Y_VEL = -0.0095;
             const MAX_Y_VEL = -0.0090;
@@ -555,6 +554,13 @@ Water.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
         this.newCapsule.p1 = this.mapMousePos(mousePos);
     }
+
+}
+
+Water.prototype.addEmitter = function(mousePos) {
+    var mMousePos = this.mapMousePos(mousePos);
+
+    this.emitters.push(new Emitter([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]  , 0.05));
 
 }
 
