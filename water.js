@@ -84,6 +84,7 @@ function Emitter(position, frequency) {
     this.strength = {val: 0.006};
     this.velRand= {val: 2};
 
+
 }
 
 Emitter.prototype.eval = function(x) {
@@ -180,6 +181,9 @@ function Water(gl) {
     //   this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
 
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
+
+    this.isLimitParticles = {val: true};
+    this.maxParticles = {val: 1500};
 }
 
 
@@ -189,6 +193,10 @@ function getRandomArbitrary(min, max) {
 
 
 var timeCount = 0;
+
+Water.prototype.reset = function() {
+    this.particles = [];
+}
 
 Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
     
@@ -211,10 +219,8 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
 
        // console.log("timer: ",  emitter.timer, emitter.frequency );
 
-        if(emitter.timer > emitter.frequency.val && this.particles.length < 1500) {
-
-
-
+        if(emitter.timer > emitter.frequency.val && (!this.isLimitParticles.val ||(this.particles.length < this.maxParticles.val)) ) {
+            
             var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
 
             if(emitter.angleVelocity.val == 0) {

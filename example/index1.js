@@ -110,6 +110,19 @@ shell.on("gl-render", function (t) {
 
     }
 
+    gui.separator();
+
+    if(gui.button("Reset Particles")) {
+        water.reset();
+    }
+
+    gui.checkbox("Limit Particle Count", water.isLimitParticles);
+
+    if(water.isLimitParticles.val) {
+        gui.sliderInt("Max Particles", water.maxParticles, 0, 10000);
+    }
+
+
     gui.end(gl, canvas.width, canvas.height);
 
 });
