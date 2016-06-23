@@ -70,10 +70,16 @@ If, for instance, frequency=0.1, that means we emit every 100th millisecond. So 
  */
 function Emitter(position, frequency) {
     this.position = position;
-    this.frequency = frequency;
+    this.frequency = {val: 0.05};
     this.timer = 0.0;
-    this.radius = 0.015;
+    this.radius =  0.015;
     this.color = [0.0, 0.0, 1.0];
+
+
+    this.angle = {val: 70};
+    this.strength = {val: 0.006};
+    this.velRand= {val: 2};
+
 }
 
 Emitter.prototype.eval = function(x) {
@@ -163,7 +169,7 @@ function Water(gl) {
     this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, FRAME_COLOR));
     this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, FRAME_COLOR));
 
-    this.emitters.push(new Emitter([-0.1, 0.0], 0.05));
+    this.emitters.push(new Emitter([-0.1, 0.0]));
 
 
     // this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
@@ -201,31 +207,33 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
 
        // console.log("timer: ",  emitter.timer, emitter.frequency );
 
-        if(emitter.timer > emitter.frequency && this.particles.length < 1500) {
+        if(emitter.timer > emitter.frequency.val && this.particles.length < 1500) {
 
-            const MIN_Y_VEL = -0.0095;
-            const MAX_Y_VEL = -0.0090;
-            
-            for(var j = 0; j < 3; ++j) {
+            var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
 
-                var y = emitter.position[1] + j*0.01;
-                var x = emitter.position[0];
+            var theta = emitter.angle.val * (Math.PI / 180.0);
+            theta = Math.PI * 2 - theta;
 
-                var c = emitter.color;
+            const strength = emitter.strength.val;
+            const velocity = [strength * Math.cos(theta), strength * Math.sin(theta)];
+
+            const v = [-velocity[1], velocity[0]];
+
+            var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
+
+            var a = emitter.velRand.val * 0.0001;
+
+            for (var j = -1; j <= 1; ++j) {
+                var p = [0.0, 0.0];
+
+                vec2.scaleAndAdd(p, emitter.position, v, 0.8* (j) );
 
                 this.particles.push(new Particle(
-                    [x, y], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)],
+                    p, [velocity[0]+getRandomArbitrary(-a,a), velocity[1]+getRandomArbitrary(-a,a)  ],
 
-                    [ c[0], c[1], c[2] ]
-
+                    c
                 ));
-
             }
-
-
-           // this.particles.push(new Particle([-0.1, 0.01], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)]));
-
-          //  this.particles.push(new Particle([-0.1, -0.01], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)]));
 
             emitter.timer = 0.0;
         }
@@ -575,7 +583,7 @@ Water.prototype.addCapsule = function (mousePos, capsuleRadius) {
 Water.prototype.addEmitter = function(mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
-    this.emitters.push(new Emitter([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]  , 0.05));
+    this.emitters.push(new Emitter([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]  ));
 }
 
 // return index of emitter under the cursor.

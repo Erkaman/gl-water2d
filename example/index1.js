@@ -1,5 +1,4 @@
 /* global requestAnimationFrame */
-
 var glShader = require('gl-shader');
 var glslify = require('glslify')
 var shell = require("gl-now")( {tickRate: 20} );
@@ -39,6 +38,7 @@ shell.on("gl-init", function () {
     
     gui = new createGui(gl);
     gui.windowSizes = [300, 530];
+    gui.windowAlpha = 1.0;
 
     water = new createWater(gl);
 
@@ -97,7 +97,13 @@ shell.on("gl-render", function (t) {
         } else {
             gui.textLine("Editing");
 
-            gui.draggerRgb("Ambient Light", editEmitter.color);
+            gui.draggerRgb("Color", editEmitter.color);
+            gui.sliderFloat("Frequency", editEmitter.frequency, 0.01, 0.3 );
+            gui.sliderInt("Angle", editEmitter.angle, 0, 360);
+            gui.sliderFloat("Strength", editEmitter.strength, 0.001, 0.02);
+
+            gui.sliderInt("Velocity Random", editEmitter.velRand, 0, 30);
+   //                                                                       0.0002
 
         }
 
@@ -130,6 +136,7 @@ shell.on("tick", function () {
         }else if (editMode.val == EM_ADD_EMITTER) {
             water.addEmitter(shell.mouse);
         }else if (editMode.val == EM_REMOVE_EMITTER) {
+            editEmitter = null;
             water.removeEmitter(shell.mouse);
         }else if (editMode.val == EM_EDIT_EMITTER) {
             var e = water.selectEmitter(shell.mouse);
