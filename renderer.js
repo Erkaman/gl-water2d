@@ -16,6 +16,8 @@ var renderMult = dt.renderMult;
 var vec2 = require('gl-vec2');
 var vec3 = require('gl-vec3');
 
+const CAPSULE_SEGMENTS = 40;
+
 function Renderer(gl) {
 
     /*
@@ -43,7 +45,7 @@ Renderer.prototype.update = function (canvasWidth, canvasHeight) {
 }
 
 
-Renderer.prototype.draw = function (gl, collisionBodies, particles) {
+Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule) {
 
     /*
      Setup geometry buffers.
@@ -69,7 +71,13 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles) {
 
         this._capsule(
                 [body.p0[0] / WORLD_SCALE, body.p0[1] / WORLD_SCALE],
-                [body.p1[0] / WORLD_SCALE, body.p1[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, 40);
+                [body.p1[0] / WORLD_SCALE, body.p1[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, CAPSULE_SEGMENTS);
+    }
+
+    if(newCapsule != null) {
+        this._capsule(
+            [newCapsule.p0[0] / WORLD_SCALE, newCapsule.p0[1] / WORLD_SCALE],
+            [newCapsule.p1[0] / WORLD_SCALE, newCapsule.p1[1] / WORLD_SCALE], newCapsule.radius / WORLD_SCALE, newCapsule.color, CAPSULE_SEGMENTS);
     }
 
 

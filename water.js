@@ -62,6 +62,10 @@ var particleRadius = 0.015 * WORLD_SCALE;
 // support radius
 var h = particleRadius;
 
+const FRAME_RADIUS = 0.06;
+const FRAME_COLOR = [0, 0.5, 0];
+const CAPSULE_RADIUS = 0.03;
+
 
 var gravity = +0.03; // gravity force.
 var sigma = 0.9;
@@ -86,6 +90,7 @@ const k_near = 1.2; // gas stiffness for near.
 var cr = 0.0;
 
 
+
 /*
  Constructor
  */
@@ -97,6 +102,9 @@ function Water(gl) {
     var add = 0;
 
     this.renderer = new createRenderer(gl);
+
+    this.newCapsule = null;
+
 
     /*
      for (var y = -0.3; y < 0.35; y += 0.020) {
@@ -117,8 +125,6 @@ function Water(gl) {
 
     //this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [0.7, 0.2, 0.2]));
 
-    const FRAME_RADIUS = 0.06;
-    const FRAME_COLOR = [0, 0.5, 0];
 
     // frame
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, FRAME_COLOR));
@@ -129,10 +135,10 @@ function Water(gl) {
 
     this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
 
-    this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], 0.03, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, FRAME_COLOR));
 
-    this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], 0.03, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], 0.03, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, FRAME_COLOR));
+    this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, FRAME_COLOR));
 
 
     // this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
@@ -169,7 +175,13 @@ var count = 0;
 
 var timeCount = 0;
 
-Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
+Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
+    
+    if(this.newCapsule != null) {
+        this.newCapsule.p1 = this.mapMousePos(mousePos);
+
+       // console.log("new: ", this.newCapsule.p0, this.newCapsule.p1 );
+    }
 
     count++;
 
@@ -471,7 +483,13 @@ Water.prototype.update = function (canvasWidth, canvasHeight, delta) {
 }
 
 Water.prototype.draw = function (gl) {
-    this.renderer.draw(gl, this.collisionBodies, this.particles);
+
+  //  Water.prototype.addCapsule = function (mousePos) {
+//        var mMousePos = this.mapMousePos(mousePos);
+
+        this.renderer.draw(gl, this.collisionBodies, this.particles,
+            this.newCapsule
+            );
 }
 
 Water.prototype.mapMousePos = function (mousePos) {
@@ -488,9 +506,7 @@ Water.prototype.mapMousePos = function (mousePos) {
 
 }
 
-Water.prototype.deleteCapsule = function (mousePos) {
-
-
+Water.prototype.removeCapsule = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
     for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
@@ -509,6 +525,23 @@ Water.prototype.deleteCapsule = function (mousePos) {
     // this.canvasHeight = canvasHeight;
 }
 
+Water.prototype.addCapsule = function (mousePos) {
+
+    if(this.newCapsule != null) {
+        // add the capsule.
+
+        this.collisionBodies.push(this.newCapsule);
+        
+        this.newCapsule = null;
+    } else {
+        // make new capsule.
+        var mMousePos = this.mapMousePos(mousePos);
+        this.newCapsule = new Capsule([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE], [0.0, 0.0], CAPSULE_RADIUS, FRAME_COLOR);
+
+        this.newCapsule.p1 = this.mapMousePos(mousePos);
+    }
+
+}
 
 module.exports = Water;
 

@@ -10,10 +10,19 @@ var vec3 = require("gl-vec3");
 var createWater = require("../water.js");
 
 var mouseLeftDownPrev = false;
+var pressed;
+var io;
+
 
 var bg = [0.6, 0.7, 1.0]; // clear color.
 
 var water;
+
+// edit modes
+const EM_REMOVE_CAPSULE = 0;
+const EM_ADD_CAPSULE = 1;
+
+var editMode = {val: EM_ADD_CAPSULE};
 
 
 shell.on("gl-init", function () {
@@ -43,7 +52,7 @@ shell.on("tick", function () {
 
     var canvas = shell.canvas;
 
-    water.update(canvas.width, canvas.height, 0.02);
+    water.update(canvas.width, canvas.height, shell.mouse, 0.02);
 
     
 
@@ -58,8 +67,8 @@ shell.on("gl-render", function (t) {
 
     water.draw(gl);
 
-    var pressed = shell.wasDown("mouse-left");
-    var io = {
+    pressed = shell.wasDown("mouse-left");
+    io = {
         mouseLeftDownCur: pressed,
         mouseLeftDownPrev: mouseLeftDownPrev,
 
@@ -70,16 +79,18 @@ shell.on("gl-render", function (t) {
 
     gui.begin(io, "Editor");
 
-    if(gui.button("CLICK"))
-        //gui.textLine("frame time " + t);
-    
-        console.log("frame time ", t);
+    gui.textLine("Edit Mode");
+
+    gui.radioButton("Remove Capsule", editMode, EM_REMOVE_CAPSULE);
+
+    gui.radioButton("Add Capsule", editMode, EM_ADD_CAPSULE);
 
 
     gui.end(gl, canvas.width, canvas.height);
 
 });
 
+var clicked = false;
 
 shell.on("tick", function () {
     var gl = shell.gl
@@ -88,11 +99,24 @@ shell.on("tick", function () {
     if (gui.hasMouseFocus())
         return;
 
-    if(shell.wasDown("mouse-left")) {
 
-        water.deleteCapsule(shell.mouse)
-        
+    if(io != null && !clicked && io.mouseLeftDownCur ==true) {
+        console.log("CLICK");
+
+        if (editMode.val == EM_REMOVE_CAPSULE) {
+            water.removeCapsule(shell.mouse);
+        } else if (editMode.val == EM_ADD_CAPSULE) {
+            water.addCapsule(shell.mouse);
+        }
+
+        clicked = true;
     }
+
+    if(io != null && io.mouseLeftDownCur==false) {
+        clicked = false;
+    }
+
+
     
     /*
     HANDLE MOUSE INPUT
