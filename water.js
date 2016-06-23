@@ -41,18 +41,6 @@ function Particle(position, velocity, color) {
     this.isNew = true;
 }
 
-/*
-If, for instance, frequency=0.1, that means we emit every 100th millisecond. So ten times per second. 
- */
-function Emitter(position, frequency) {
-    this.position = position;
-    this.frequency = frequency;
-    this.timer = 0.0;
-    this.radius = 0.015;
-    this.color = [0.0, 0.0, 1.0];
-}
-
-
 // evaluate the implicit function of the capsule on the coordinate x.
 // return positive number if x is outside the capsule
 // return negative number if x is inside the capsule
@@ -62,7 +50,7 @@ Capsule.prototype.eval = function (x) {
     var p0 = this.p0;
     var p1 = this.p1;
     var r = this.radius;
-    
+
     var p1_sub_p0 = [0.0, 0.0];
     vec2.subtract(p1_sub_p0, p1, p0);
 
@@ -75,6 +63,30 @@ Capsule.prototype.eval = function (x) {
     var Fx = vec2.length(vec2.subtract(scratch, q, x)) - r;
     return Fx;
 }
+
+
+/*
+If, for instance, frequency=0.1, that means we emit every 100th millisecond. So ten times per second. 
+ */
+function Emitter(position, frequency) {
+    this.position = position;
+    this.frequency = frequency;
+    this.timer = 0.0;
+    this.radius = 0.015;
+    this.color = [0.0, 0.0, 1.0];
+}
+
+Emitter.prototype.eval = function(x) {
+
+    var o = this.position;
+    var r = this.radius;
+
+    var o_minus_x= [0.0, 0.0];
+    vec2.subtract(o_minus_x, o, x);
+
+    return vec2.length(o_minus_x) - r;
+}
+
 
 var WORLD_MIN = [-0.6, -0.6];
 var WORLD_MAX = [+0.6, +0.9];
@@ -535,8 +547,6 @@ Water.prototype.removeCapsule = function (mousePos) {
         }
     }
 
-        // this.canvasWidth = canvasWidth;
-    // this.canvasHeight = canvasHeight;
 }
 
 Water.prototype.addCapsule = function (mousePos, capsuleRadius) {
@@ -561,8 +571,29 @@ Water.prototype.addEmitter = function(mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
     this.emitters.push(new Emitter([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]  , 0.05));
-
 }
+
+Water.prototype.removeEmitter = function(mousePos) {
+
+    var mMousePos = this.mapMousePos(mousePos);
+
+    for (var i = 0; i < this.emitters.length; ++i) {
+
+        var emitter = this.emitters[i];
+
+
+        var Fx = emitter.eval([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]);
+
+        console.log("fx: ", Fx);
+        if(Fx <= 0) {
+            this.emitters.splice(i, 1);
+            --i;
+        }
+
+
+    }
+}
+
 
 Water.prototype.cancelAddCapsule = function () {
     this.newCapsule = null;

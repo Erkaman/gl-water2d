@@ -115,6 +115,8 @@ shell.on("tick", function () {
             water.addCapsule(shell.mouse, capsuleRadius.val);
         }else if (editMode.val == EM_ADD_EMITTER) {
             water.addEmitter(shell.mouse);
+        }else if (editMode.val == EM_REMOVE_EMITTER) {
+            water.removeEmitter(shell.mouse);
         }
 
         leftClicked = true;
