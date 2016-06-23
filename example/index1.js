@@ -45,18 +45,9 @@ shell.on("gl-init", function () {
 var total = 0;
 
 shell.on("tick", function () {
-    /*total += 0.016;
-    
-    if(total > 10.0) {
-        console.log("10: ");
-    }*/
-
     var canvas = shell.canvas;
 
     water.update(canvas.width, canvas.height, shell.mouse, 0.02);
-
-    
-
 });
 
 
@@ -91,15 +82,16 @@ shell.on("gl-render", function (t) {
     gui.textLine("Edit Mode Settings");
 
     if(editMode.val == EM_ADD_CAPSULE) {
+        gui.textLine("Right click to cancel");
         gui.sliderFloat("Capsule Radius", capsuleRadius, 0.02, 0.06);
     }
-
 
     gui.end(gl, canvas.width, canvas.height);
 
 });
 
-var clicked = false;
+var leftClicked = false;
+var rightClicked = false;
 
 shell.on("tick", function () {
     var gl = shell.gl
@@ -108,9 +100,11 @@ shell.on("tick", function () {
     if (gui.hasMouseFocus())
         return;
 
+    var leftDown = shell.wasDown("mouse-left");
+    var rightDown = shell.wasDown("mouse-right");
 
-    if(io != null && !clicked && io.mouseLeftDownCur ==true) {
-        console.log("CLICK");
+    if(!leftClicked && leftDown ==true) {
+        console.log("lrft CLICK");
 
         if (editMode.val == EM_REMOVE_CAPSULE) {
             water.removeCapsule(shell.mouse);
@@ -118,11 +112,26 @@ shell.on("tick", function () {
             water.addCapsule(shell.mouse, capsuleRadius.val);
         }
 
-        clicked = true;
+        leftClicked = true;
     }
 
-    if(io != null && io.mouseLeftDownCur==false) {
-        clicked = false;
+    if(!rightClicked && rightDown ==true) {
+        console.log("right CLICK");
+
+        if (editMode.val == EM_ADD_CAPSULE) {
+            water.cancelAddCapsule();
+        }
+
+        rightClicked = true;
+    }
+
+
+
+    if(leftDown==false) {
+        leftClicked = false;
+    }
+    if(rightDown==false) {
+        rightClicked = false;
     }
 
 

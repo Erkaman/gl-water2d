@@ -543,6 +543,10 @@ Water.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
 }
 
+Water.prototype.cancelAddCapsule = function () {
+    this.newCapsule = null;
+}
+
 module.exports = Water;
 
 /*
