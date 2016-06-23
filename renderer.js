@@ -45,7 +45,7 @@ Renderer.prototype.update = function (canvasWidth, canvasHeight) {
 }
 
 
-Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule) {
+Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule, emitters) {
 
     /*
      Setup geometry buffers.
@@ -73,7 +73,6 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule) {
                 [body.p0[0] / WORLD_SCALE, body.p0[1] / WORLD_SCALE],
                 [body.p1[0] / WORLD_SCALE, body.p1[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, CAPSULE_SEGMENTS);
     }
-
     if(newCapsule != null) {
         this._capsule(
             [newCapsule.p0[0] / WORLD_SCALE, newCapsule.p0[1] / WORLD_SCALE],
@@ -81,7 +80,19 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles,newCapsule) {
     }
 
 
-    for (var i = 0; i < particles.length; ++i) {
+    for (var i = 0; i < emitters.length; ++i) {
+
+        var emitter = emitters[i];
+
+        var p = emitter.position;
+        var r = emitter.radius;
+        
+        this._circle(p, r, [1.0, 0.0, 0.0], 20);
+    }
+
+
+
+        for (var i = 0; i < particles.length; ++i) {
 
         var particle = particles[i];
 

@@ -23,6 +23,33 @@ function Capsule(p0, p1, radius, color) {
 
     this.radius = radius * WORLD_SCALE;
     this.color = color;
+}
+
+function Particle(position, velocity, color) {
+
+    this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
+
+    this.velocity = vec2.fromValues(velocity[0] * WORLD_SCALE, velocity[1] * WORLD_SCALE);
+
+    // console.log("add part: ", this.position );
+    this.color = color;
+
+    this.radius = particleRadius;
+
+    this.o = [this.position[0], this.position[1]];
+    this.f = [0.0, 0.0];
+    this.isNew = true;
+}
+
+/*
+If, for instance, frequency=0.1, that means we emit every 100th millisecond. So ten times per second. 
+ */
+function Emitter(position, frequency) {
+    this.position = position;
+    this.frequency = frequency;
+    this.timer = 0.0;
+    this.radius = 0.015;
+    this.color = [0.0, 0.0, 1.0];
 
 }
 
@@ -105,23 +132,8 @@ function Water(gl) {
 
     this.newCapsule = null;
 
-
-    /*
-     for (var y = -0.3; y < 0.35; y += 0.020) {
-     for (var x = -0.4; x < +0.3; x += 0.020) {
-     this.particles.push(new Particle([x + add, y], [0.0, 0.0]));
-     }
-
-     if(add > 0) {
-     add = 0;
-     } else {
-     add = +0.05;
-     }
-     }
-     */
-
-
     this.collisionBodies = [];
+    this.emitters = [];
 
     //this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [0.7, 0.2, 0.2]));
 
@@ -141,6 +153,8 @@ function Water(gl) {
     this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, FRAME_COLOR));
 
 
+    this.emitters.push(new Emitter([-0.1, 0.0], 0.05));
+
     // this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
     //   this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
 
@@ -152,26 +166,6 @@ function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-function Particle(position, velocity) {
-
-    this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
-
-    this.velocity = vec2.fromValues(velocity[0] * WORLD_SCALE, velocity[1] * WORLD_SCALE);
-
-    // console.log("add part: ", this.position );
-    //  this.color = [ 0.0, 0.0 ,getRandomArbitrary(0.95, 1.0)  ] ;
-    this.color = [getRandomArbitrary(0.0, 1.0), getRandomArbitrary(0.0, 1.0), getRandomArbitrary(0.0, 1.0)];
-
-    this.radius = particleRadius;
-
-    this.o = [this.position[0], this.position[1]];
-    this.f = [0.0, 0.0];
-    this.isNew = true;
-
-
-}
-
-var count = 0;
 
 var timeCount = 0;
 
@@ -183,25 +177,46 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
        // console.log("new: ", this.newCapsule.p0, this.newCapsule.p1 );
     }
 
-    count++;
 
     this.renderer.update(canvasWidth, canvasHeight);
 
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
-    if (count % 2 == 0 && this.particles.length < 800) {
+    for (var i = 0; i < this.emitters.length; ++i) {
+        var emitter = this.emitters[i];
 
-        const MIN_Y_VEL = -0.0095;
-        const MAX_Y_VEL = -0.0090;
+        emitter.timer += delta;
 
-        this.particles.push(new Particle([-0.1, 0.0], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)]));
+       // console.log("timer: ",  emitter.timer, emitter.frequency );
 
-        this.particles.push(new Particle([-0.1, 0.01], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)]));
+        if(emitter.timer > emitter.frequency && this.particles.length < 800) {
 
-        this.particles.push(new Particle([-0.1, 0.02], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)]));
+            const MIN_Y_VEL = -0.0095;
+            const MAX_Y_VEL = -0.0090;
+
+
+            for(var j = 0; j < 3; ++j) {
+
+                var y = emitter.position[1] + j*0.01;
+                var x = emitter.position[0];
+
+                this.particles.push(new Particle(
+                    [x, y], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)], emitter.color ));
+
+            }
+
+
+           // this.particles.push(new Particle([-0.1, 0.01], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)]));
+
+          //  this.particles.push(new Particle([-0.1, -0.01], [0.003, getRandomArbitrary(MIN_Y_VEL, MAX_Y_VEL)]));
+
+            emitter.timer = 0.0;
+        }
 
     }
+
+
 
 
     for (var i = 0; i < this.particles.length; ++i) {
@@ -488,7 +503,7 @@ Water.prototype.draw = function (gl) {
 //        var mMousePos = this.mapMousePos(mousePos);
 
         this.renderer.draw(gl, this.collisionBodies, this.particles,
-            this.newCapsule
+            this.newCapsule, this.emitters
             );
 }
 

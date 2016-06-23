@@ -33,7 +33,7 @@ void main() {
   gl_FragColor = vec4(vColor.xyz ,1.0 );
   
   } else {
- gl_FragColor = vec4(sample.xyz * vec3(0.0, 0.0, 1.0), sample.a);
+ gl_FragColor = vec4(sample.xyz * vColor.xyz, sample.a);
  
   }
   
