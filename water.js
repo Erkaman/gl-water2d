@@ -8,6 +8,7 @@ var dt = require("./data_types.js");
 
 var SpatialHash = require("./spatial_hash.js");
 var createRenderer = require("./renderer.js");
+var toPixel = require("./renderer.js").toPixel;
 
 /*
  function Circle(position, radius, color) {
@@ -563,8 +564,15 @@ Water.prototype.mapMousePos = function (mousePos) {
         (-1 + 2 * (  mousePos[1] / this.canvasHeight )) * WORLD_SCALE,
 
     ];
+}
 
+// return the minimum pixel position of the simulation.
+Water.prototype.getMinPos = function() {
+    return toPixel(  this.canvasWidth, this.canvasHeight, WORLD_MIN);
+}
 
+Water.prototype.getMaxPos = function() {
+    return toPixel(  this.canvasWidth, this.canvasHeight, WORLD_MAX);
 }
 
 Water.prototype.removeCapsule = function (mousePos) {

@@ -16,7 +16,17 @@ var renderMult = dt.renderMult;
 var vec2 = require('gl-vec2');
 var vec3 = require('gl-vec3');
 
+
+
 const CAPSULE_SEGMENTS = 40;
+
+
+// convert from world coordinates to pixel coordinates.
+function toPixel(canvasWidth, canvasHeight, position) {
+    var x = ((position[0] + 1) / 2.0) * canvasHeight + (canvasWidth - canvasHeight) / 2.0;
+    var y = (((position[1] + 1) / 2.0) * canvasHeight);
+    return [x,y];
+}
 
 function Mesh(gl) {
     /*
@@ -82,11 +92,13 @@ Mesh.prototype.update = function (canvasWidth, canvasHeight) {
 
 Mesh.prototype._addPosition = function (position) {
 
-    var x = ((position[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
-    var y = (((position[1] + 1) / 2.0) * this.canvasHeight);
+   // var x = ((position[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
+  //  var y = (((position[1] + 1) / 2.0) * this.canvasHeight);
 
-    this.positionBuffer[this.positionBufferIndex++] = x
-    this.positionBuffer[this.positionBufferIndex++] = y;
+    var p = toPixel(this.canvasWidth, this.canvasHeight, position);
+
+    this.positionBuffer[this.positionBufferIndex++] = p[0];
+    this.positionBuffer[this.positionBufferIndex++] = p[1];
 };
 
 Mesh.prototype._addColor = function (color) {
@@ -457,4 +469,6 @@ Renderer.prototype._circle = function (mesh, centerPosition, radius, color, segm
 };
 
 module.exports = Renderer;
+module.exports.toPixel = toPixel;
+
 
