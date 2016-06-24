@@ -67,13 +67,13 @@ Capsule.prototype.eval = function (x) {
 
 
 /*
-If, for instance, frequency=0.1, that means we emit every 100th millisecond. So ten times per second. 
+ If, for instance, frequency=0.1, that means we emit every 100th millisecond. So ten times per second.
  */
 function Emitter(position, frequency) {
     this.position = position;
     this.frequency = {val: 0.05};
     this.timer = 0.0;
-    this.radius =  0.015;
+    this.radius = 0.015;
     this.color = [0.0, 0.0, 1.0];
 
 
@@ -83,17 +83,15 @@ function Emitter(position, frequency) {
 
 
     this.strength = {val: 0.006};
-    this.velRand= {val: 2};
-
-
+    this.velRand = {val: 2};
 }
 
-Emitter.prototype.eval = function(x) {
+Emitter.prototype.eval = function (x) {
 
     var o = this.position;
     var r = this.radius;
 
-    var o_minus_x= [0.0, 0.0];
+    var o_minus_x = [0.0, 0.0];
     vec2.subtract(o_minus_x, o, x);
 
     return vec2.length(o_minus_x) - r;
@@ -120,7 +118,8 @@ var gravity = +0.03; // gravity force.
 var sigma = 0.9;
 var beta = 0.3;
 
-var wallDamp = 1.0 / 5.0;
+// how much of its original velocity that a particle gets to keep when it bounces against a capsule.
+var collisionDamping = 1.0 / 5.0;
 
 const restDensity = 10.0; // rest density
 const stiffness = 0.009;
@@ -135,38 +134,24 @@ function Simulation(gl) {
 
     this.particles = [];
 
-
-    var add = 0;
-
     this.renderer = new createRenderer(gl);
 
+    // used when we are adding a new capsule in the GUI.
     this.newCapsule = null;
 
     this.collisionBodies = [];
     this.emitters = [];
-
-    //this.collisionBodies.push(new Circle([0.0,0.2], 0.13, [0.7, 0.2, 0.2]));
-
-
+    
     // frame
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, FRAME_COLOR));
-
     this.collisionBodies.push(new Capsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
-
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
-
     this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
-
     this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, FRAME_COLOR));
-
     this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, FRAME_COLOR));
     this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, FRAME_COLOR));
 
     this.emitters.push(new Emitter([-0.1, -0.15]));
-
-
-    // this.collisionBodies.push(new Circle(WORLD_MIN, FRAME_RADIUS, [0.7, 0.0, 0.0]));
-    //   this.collisionBodies.push(new Circle(WORLD_MAX, FRAME_RADIUS, [0.7, 0.0, 0.0]));
 
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
 
@@ -182,95 +167,23 @@ function getRandomArbitrary(min, max) {
 
 var timeCount = 0;
 
-Simulation.prototype.reset = function() {
+Simulation.prototype.reset = function () {
     this.particles = [];
 }
 
 Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
-    
-    if(this.newCapsule != null) {
-        this.newCapsule.p1 = this.mapMousePos(mousePos);
 
-       // console.log("new: ", this.newCapsule.p0, this.newCapsule.p1 );
+    if (this.newCapsule != null) {
+        // when adding a new capsule, make p1 of the capsule follow the mouse.
+        this.newCapsule.p1 = this.mapMousePos(mousePos);
     }
 
-
     this.renderer.update(canvasWidth, canvasHeight);
-
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
-    for (var i = 0; i < this.emitters.length; ++i) {
-        var emitter = this.emitters[i];
-
-        emitter.timer += delta;
-
-       // console.log("timer: ",  emitter.timer, emitter.frequency );
-
-        if(emitter.timer > emitter.frequency.val && (!this.isLimitParticles.val ||(this.particles.length < this.maxParticles.val)) ) {
-            
-            var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
-
-            if(emitter.angleVelocity.val == 0) {
-                emitter.angle.val = emitter.baseAngle.val;
-            } else {
-                emitter.angle.val += emitter.angleVelocity.val;
-            }
-
-
-
-            var theta = emitter.angle.val * (Math.PI / 180.0);
-            theta = Math.PI * 2 - theta;
-
-            emitter.angle.val += emitter.angleVelocity.val;
-
-            const strength = emitter.strength.val;
-            const velocity = [strength * Math.cos(theta), strength * Math.sin(theta)];
-
-            const v = [-velocity[1], velocity[0]];
-
-            var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
-
-            var a = emitter.velRand.val * 0.0001;
-
-            for (var j = -1; j <= 1; ++j) {
-                var p = [0.0, 0.0];
-
-                vec2.scaleAndAdd(p, emitter.position, v, 0.8* (j) );
-
-                this.particles.push(new Particle(
-                    p, [velocity[0]+getRandomArbitrary(-a,a), velocity[1]+getRandomArbitrary(-a,a)  ],
-
-                    c
-                ));
-            }
-
-            emitter.timer = 0.0;
-        }
-
-    }
-
-
-
-
-    for (var i = 0; i < this.particles.length; ++i) {
-        var iParticle = this.particles[i];
-        var p = iParticle.position;
-
-        // var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
-        //  var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
-
-        if (p[0] < SCALED_WORLD_MIN[0] || p[1] < SCALED_WORLD_MIN[1] ||
-            p[0] > SCALED_WORLD_MAX[0] || p[1] > SCALED_WORLD_MAX[1]) {
-
-            //    console.log("remove part at ", p );
-
-            this.particles.splice(i, 1);
-            --i;
-        }
-    }
-
-    // console.log("step2: ", this.particles.length );
+    this.emitParticles(delta);
+    this.removeOutOfBoundsParticles();
 
     this.hash.update(this.particles);
 
@@ -295,11 +208,6 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
         iParticle.isNew = false;
 
         iParticle.velocity[1] += gravity;
-
-        //  console.log("grav: ", gravity);
-
-
-        // do viscosisity.
 
 
         var nearParticles = this.hash.getNearParticles(iParticle);
@@ -359,93 +267,175 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
 
 
         }
-
-
     }
 
-    // calculate pressures.
+
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
 
+        // save the original particle position.
         iParticle.o = [iParticle.position[0], iParticle.position[1]];
         vec2.add(iParticle.position, iParticle.position, iParticle.velocity);
 
-        const pad = 15;
+        // compute near and far density.
+        this.computeDensities(iParticle);
 
-        for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
+        // handle collision with capsules.
+        this.handleCollision(iParticle);
 
-            var body = this.collisionBodies[iBody];
-
-            var x = iParticle.position;
-            var scratch = vec2.create();
-
-            if (true) {
-                var p0 = body.p0;
-                var p1 = body.p1;
-                var r = body.radius;
-
-
-                var p1_sub_p0 = [0.0, 0.0];
-                vec2.subtract(p1_sub_p0, p1, p0);
-
-                var t = -vec2.dot(vec2.subtract(scratch, p0, x), p1_sub_p0) / vec2.dot(p1_sub_p0, p1_sub_p0);
-                t = clamp(t, 0.0, 1.0);
-
-                var q = [0.0, 0.0];
-                vec2.scaleAndAdd(q, p0, p1_sub_p0, t);
-
-                var Fx = vec2.length(vec2.subtract(scratch, q, x)) - r;
-
-                // check if collision
-                if (Fx <= 0) {
-
-
-                    var x_sub_q = [0.0, 0.0];
-                    vec2.subtract(x_sub_q, x, q);
-                    var x_sub_q_len = vec2.length(x_sub_q);
-
-                    // compute normal.
-                    var n = [0.0, 0.0];
-                    vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
-
-                    // bounce particle in the direction of the normal.
-                    vec2.scaleAndAdd(iParticle.position, iParticle.position, n, -Fx * wallDamp);
-                }
-            }
-        }
-
-
-        var nearParticles = this.hash.getNearParticles(iParticle);
-
-        for (var j = 0; j < nearParticles.length; ++j) {
-
-            var jParticle = nearParticles[j];
-
-            var dp = [0.0, 0.0];
-
-            vec2.subtract(dp, iParticle.position, jParticle.position);
-
-            var r2 = vec2.dot(dp, dp);
-
-            if (r2 <= 0.0 || r2 > h * h)
-                continue;
-
-            var r = Math.sqrt(r2);
-            var a = 1 - r / h;
-
-            var aa = a * a;
-            var aaa = aa * a;
-
-            iParticle.density += aa;
-            jParticle.density += aa;
-
-            iParticle.nearDensity += aaa;
-            jParticle.nearDensity += aaa;
-        }
     }
 
-    // calculate relaxed positions:
+    // below we do double density relaxation(algorithm 2 in the paper)
+    this.doubleDensityRelaxation();
+}
+
+
+Simulation.prototype.computeDensities = function(iParticle) {
+
+    var nearParticles = this.hash.getNearParticles(iParticle);
+    for (var j = 0; j < nearParticles.length; ++j) {
+
+        var jParticle = nearParticles[j];
+
+        var dp = [0.0, 0.0];
+
+        vec2.subtract(dp, iParticle.position, jParticle.position);
+
+        var r2 = vec2.dot(dp, dp);
+
+        if (r2 <= 0.0 || r2 > h * h)
+            continue;
+
+        var r = Math.sqrt(r2);
+        var a = 1 - r / h;
+
+        var aa = a * a;
+        var aaa = aa * a;
+
+        iParticle.density += aa;
+        jParticle.density += aa;
+
+        iParticle.nearDensity += aaa;
+        jParticle.nearDensity += aaa;
+    }
+}
+
+Simulation.prototype.removeOutOfBoundsParticles = function() {
+    for (var i = 0; i < this.particles.length; ++i) {
+        var iParticle = this.particles[i];
+        var p = iParticle.position;
+        if (p[0] < SCALED_WORLD_MIN[0] || p[1] < SCALED_WORLD_MIN[1] ||
+            p[0] > SCALED_WORLD_MAX[0] || p[1] > SCALED_WORLD_MAX[1]) {
+            this.particles.splice(i, 1);
+            --i;
+        }
+    }
+}
+
+Simulation.prototype.emitParticles = function(delta) {
+
+    for (var i = 0; i < this.emitters.length; ++i) {
+        var emitter = this.emitters[i];
+
+        emitter.timer += delta;
+
+        // console.log("timer: ",  emitter.timer, emitter.frequency );
+
+        if (emitter.timer > emitter.frequency.val && (!this.isLimitParticles.val || (this.particles.length < this.maxParticles.val))) {
+
+            var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
+
+            if (emitter.angleVelocity.val == 0) {
+                emitter.angle.val = emitter.baseAngle.val;
+            } else {
+                emitter.angle.val += emitter.angleVelocity.val;
+            }
+
+
+            var theta = emitter.angle.val * (Math.PI / 180.0);
+            theta = Math.PI * 2 - theta;
+
+            emitter.angle.val += emitter.angleVelocity.val;
+
+            const strength = emitter.strength.val;
+            const velocity = [strength * Math.cos(theta), strength * Math.sin(theta)];
+
+            const v = [-velocity[1], velocity[0]];
+
+            var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
+
+            var a = emitter.velRand.val * 0.0001;
+
+            for (var j = -1; j <= 1; ++j) {
+                var p = [0.0, 0.0];
+
+                vec2.scaleAndAdd(p, emitter.position, v, 0.8 * (j));
+
+                this.particles.push(new Particle(
+                    p, [velocity[0] + getRandomArbitrary(-a, a), velocity[1] + getRandomArbitrary(-a, a)],
+
+                    c
+                ));
+            }
+
+            emitter.timer = 0.0;
+        }
+    }
+}
+
+
+Simulation.prototype.handleCollision = function(iParticle) {
+
+    // for iParticle, handle collision with all the capsules.
+    // to do the collision checking, we are representing the capsules as implicit functions.
+    // we are using the formulas derived in section 4.4.2.2 of the paper
+    // "Lagrangian Fluid Dynamics Using Smoothed Particle Hydrodynamics"
+    // http://image.diku.dk/projects/media/kelager.06.pdf#page=33
+
+    for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
+
+        var body = this.collisionBodies[iBody];
+
+        var x = iParticle.position;
+        var scratch = vec2.create();
+
+        if (true) {
+            var p0 = body.p0;
+            var p1 = body.p1;
+            var r = body.radius;
+
+            var p1_sub_p0 = [0.0, 0.0];
+            vec2.subtract(p1_sub_p0, p1, p0);
+
+            var t = -vec2.dot(vec2.subtract(scratch, p0, x), p1_sub_p0) / vec2.dot(p1_sub_p0, p1_sub_p0);
+            t = clamp(t, 0.0, 1.0);
+
+            var q = [0.0, 0.0];
+            vec2.scaleAndAdd(q, p0, p1_sub_p0, t);
+
+            var Fx = vec2.length(vec2.subtract(scratch, q, x)) - r;
+
+            // check if collision
+            if (Fx <= 0) {
+
+                var x_sub_q = [0.0, 0.0];
+                vec2.subtract(x_sub_q, x, q);
+                var x_sub_q_len = vec2.length(x_sub_q);
+
+                // compute normal.
+                var n = [0.0, 0.0];
+                vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
+
+                // bounce particle in the direction of the normal.
+                vec2.scaleAndAdd(iParticle.position, iParticle.position, n, -Fx * collisionDamping);
+            }
+        }
+    }
+}
+
+
+Simulation.prototype.doubleDensityRelaxation = function () {
 
     for (var i = 0; i < this.particles.length; ++i) {
 
@@ -455,14 +445,11 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
         var nearPressure = nearStiffness * iParticle.nearDensity;
 
         var nearParticles = this.hash.getNearParticles(iParticle);
-
         for (var j = 0; j < nearParticles.length; ++j) {
-
             var jParticle = nearParticles[j];
 
             var dp = [0.0, 0.0];
             vec2.subtract(dp, iParticle.position, jParticle.position);
-
             var r2 = vec2.dot(dp, dp);
 
             if (r2 <= 0.0 || r2 > h * h)
@@ -479,42 +466,33 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
         }
     }
 
-
 }
 
 Simulation.prototype.draw = function (gl) {
-
-  //  Simulation.prototype.addCapsule = function (mousePos) {
-//        var mMousePos = this.mapMousePos(mousePos);
-
-        this.renderer.draw(gl, this.collisionBodies, this.particles,
-            this.newCapsule, this.emitters
-            );
+    this.renderer.draw(gl, this.collisionBodies, this.particles, this.newCapsule, this.emitters);
 }
 
 Simulation.prototype.mapMousePos = function (mousePos) {
 
     // we map the mouse pos to the coordinate system of the water simultation
     return [
-
-        WORLD_SCALE *(mousePos[0] - ( this.canvasWidth - this.canvasHeight ) * 0.5 - 0.5 * this.canvasHeight) * (  2.0 / this.canvasHeight ),
-
+        WORLD_SCALE * (mousePos[0] - ( this.canvasWidth - this.canvasHeight ) * 0.5 - 0.5 * this.canvasHeight) * (  2.0 / this.canvasHeight ),
         (-1 + 2 * (  mousePos[1] / this.canvasHeight )) * WORLD_SCALE,
 
     ];
 }
 
 // return the minimum pixel position of the simulation.
-Simulation.prototype.getMinPos = function() {
+Simulation.prototype.getMinPos = function () {
     var x = ((WORLD_MIN[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
     var y = this.canvasHeight - (((WORLD_MAX[1] + 1) / 2.0) * this.canvasHeight);
-    return [x,y];
+    return [x, y];
 }
 
-Simulation.prototype.getMaxPos = function() {
+Simulation.prototype.getMaxPos = function () {
     var x = ((WORLD_MAX[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
     var y = this.canvasHeight - (((WORLD_MIN[1] + 1) / 2.0) * this.canvasHeight);
-    return [x,y];
+    return [x, y];
 }
 
 Simulation.prototype.removeCapsule = function (mousePos) {
@@ -525,48 +503,45 @@ Simulation.prototype.removeCapsule = function (mousePos) {
         var body = this.collisionBodies[iBody];
 
         var Fx = body.eval(mMousePos);
-        
-        if(Fx <= 0) {
+
+        if (Fx <= 0) {
             this.collisionBodies.splice(iBody, 1);
             --iBody;
         }
     }
-
 }
 
 Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
-    if(this.newCapsule != null) {
+    if (this.newCapsule != null) {
         // add the capsule.
-
         this.collisionBodies.push(this.newCapsule);
-        
         this.newCapsule = null;
     } else {
         // make new capsule.
         var mMousePos = this.mapMousePos(mousePos);
-        this.newCapsule = new Capsule([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE], [0.0, 0.0], capsuleRadius, FRAME_COLOR);
+        this.newCapsule = new Capsule([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE], [0.0, 0.0], capsuleRadius, FRAME_COLOR);
 
         this.newCapsule.p1 = this.mapMousePos(mousePos);
     }
 
 }
 
-Simulation.prototype.addEmitter = function(mousePos) {
+Simulation.prototype.addEmitter = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
-    this.emitters.push(new Emitter([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]  ));
+    this.emitters.push(new Emitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]));
 }
 
 // return index of emitter under the cursor.
-Simulation.prototype.findEmitter = function(mousePos) {
+Simulation.prototype.findEmitter = function (mousePos) {
 
     var mMousePos = this.mapMousePos(mousePos);
 
     for (var i = 0; i < this.emitters.length; ++i) {
         var emitter = this.emitters[i];
-        var Fx = emitter.eval([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]);
-        if(Fx <= 0) {
+        var Fx = emitter.eval([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]);
+        if (Fx <= 0) {
             return i;
         }
     }
@@ -575,16 +550,16 @@ Simulation.prototype.findEmitter = function(mousePos) {
 }
 
 
-Simulation.prototype.removeEmitter = function(mousePos) {
+Simulation.prototype.removeEmitter = function (mousePos) {
     var i = this.findEmitter(mousePos);
-    if(i != -1) {
+    if (i != -1) {
         this.emitters.splice(i, 1);
     }
 }
 
-Simulation.prototype.selectEmitter = function(mousePos) {
+Simulation.prototype.selectEmitter = function (mousePos) {
     var i = this.findEmitter(mousePos);
-    if(i != -1) {
+    if (i != -1) {
         return this.emitters[i]
     } else {
         return null;
