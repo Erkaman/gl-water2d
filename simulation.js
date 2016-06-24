@@ -97,7 +97,6 @@ Emitter.prototype.eval = function (x) {
     return vec2.length(o_minus_x) - r;
 }
 
-
 var WORLD_MIN = [-0.6, -0.6];
 var WORLD_MAX = [+0.6, +0.9];
 var WORLD_SCALE = dt.WORLD_SCALE;
@@ -106,13 +105,9 @@ var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
 var particleRadius = 0.015 * WORLD_SCALE;
+var h = particleRadius; // support radius
 
-// support radius
-var h = particleRadius;
-
-const FRAME_RADIUS = 0.06;
-const FRAME_COLOR = [0, 0.5, 0];
-const CAPSULE_RADIUS = 0.03;
+const CAPSULE_COLOR = [0, 0.5, 0];
 
 var gravity = +0.03; // gravity force.
 var sigma = 0.9;
@@ -121,10 +116,10 @@ var beta = 0.3;
 // how much of its original velocity that a particle gets to keep when it bounces against a capsule.
 var collisionDamping = 1.0 / 5.0;
 
-const restDensity = 10.0; // rest density
+// see the paper for definitions of these.
+const restDensity = 10.0;
 const stiffness = 0.009;
-// set to 0.8 for less splash.
-const nearStiffness = 1.2; // gas stiffness for near.
+const nearStiffness = 1.2;
 
 
 /*
@@ -143,13 +138,15 @@ function Simulation(gl) {
     this.emitters = [];
     
     // frame
-    this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, FRAME_COLOR));
-    this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, FRAME_COLOR));
+    const CAPSULE_RADIUS = 0.03;
+    const FRAME_RADIUS = 0.06;
+    this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new Capsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, CAPSULE_COLOR));
 
     this.emitters.push(new Emitter([-0.1, -0.15]));
 
@@ -212,7 +209,7 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
 
         iParticle.isNew = false;
 
-        iParticle.velocity[1] += gravity;
+        iParticle.velocity[1] += gravity * 1.0;
 
         // do viscosity impules(algorithm 5 from the paper)
         this.doViscosityImpules(iParticle, 1.0);
@@ -520,7 +517,7 @@ Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
     } else {
         // make new capsule.
         var mMousePos = this.mapMousePos(mousePos);
-        this.newCapsule = new Capsule([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE], [0.0, 0.0], capsuleRadius, FRAME_COLOR);
+        this.newCapsule = new Capsule([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE], [0.0, 0.0], capsuleRadius, CAPSULE_COLOR);
 
         this.newCapsule.p1 = this.mapMousePos(mousePos);
     }
