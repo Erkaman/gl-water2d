@@ -116,35 +116,22 @@ const FRAME_RADIUS = 0.06;
 const FRAME_COLOR = [0, 0.5, 0];
 const CAPSULE_RADIUS = 0.03;
 
-
 var gravity = +0.03; // gravity force.
 var sigma = 0.9;
 var beta = 0.3;
 
 var wallDamp = 1.0 / 5.0;
 
-const rho_0 = 10.0; // rest density
-//const l = 0.08
-//const k = 0.008*(1-l) + (0.08)*(l); // gas stiffness constant.
-const k = 0.009;
-
+const restDensity = 10.0; // rest density
+const stiffness = 0.009;
 // set to 0.8 for less splash.
-const k_near = 1.2; // gas stiffness for near.
-/*
- const kSurfaceTension = 0.0004;
- const kLinearViscocity = 0.5;
- const kQuadraticViscocity = 1.0;
- */
-
-
-var cr = 0.0;
-
+const nearStiffness = 1.2; // gas stiffness for near.
 
 
 /*
  Constructor
  */
-function Water(gl) {
+function Simulation(gl) {
 
     this.particles = [];
 
@@ -195,11 +182,11 @@ function getRandomArbitrary(min, max) {
 
 var timeCount = 0;
 
-Water.prototype.reset = function() {
+Simulation.prototype.reset = function() {
     this.particles = [];
 }
 
-Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
+Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
     
     if(this.newCapsule != null) {
         this.newCapsule.p1 = this.mapMousePos(mousePos);
@@ -283,7 +270,6 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
         }
     }
 
-
     // console.log("step2: ", this.particles.length );
 
     this.hash.update(this.particles);
@@ -336,16 +322,11 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
             vec2.scale(normalized_r, dp, 1.0 / r);
 
             var one_minus_q = 1 - r / h;
-
-
             var vi_minus_vj = [0.0, 0.0];
 
-            // TODO: should it not be that reverse order?
             vec2.subtract(vi_minus_vj, iParticle.velocity, jParticle.velocity);
 
-
             var u = vec2.dot(vi_minus_vj, normalized_r);
-//                (_loc2_.vx - _loc8_.vx) * _loc9_ + (_loc2_.vy - _loc8_.vy) * _loc10_;
 
 
             var T = 0;
@@ -388,33 +369,9 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
         var iParticle = this.particles[i];
 
         iParticle.o = [iParticle.position[0], iParticle.position[1]];
-
-        //  console.log("add vel: ", iParticle.velocity);
         vec2.add(iParticle.position, iParticle.position, iParticle.velocity);
-        //  console.log("added vel: ", iParticle.position);
-
-        // do collision handling here!
-
-        // SCALED_WORLD_MAX
-
 
         const pad = 15;
-
-        /*
-         if(iParticle.position[1] > SCALED_WORLD_MAX[1]-pad) {
-         iParticle.position[1] += ( SCALED_WORLD_MAX[1]-pad - iParticle.position[1]   ) * wallDamp;
-         }
-         else if(iParticle.position[0] > SCALED_WORLD_MAX[0]-pad) {
-         iParticle.position[0] += ( SCALED_WORLD_MAX[0]-pad - iParticle.position[0]   ) * wallDamp;
-         }
-         else if(iParticle.position[0] < SCALED_WORLD_MIN[0]+pad) {
-         iParticle.position[0] += ( SCALED_WORLD_MIN[0]+pad - iParticle.position[0]   ) * wallDamp;
-         }
-         else if(iParticle.position[1] < SCALED_WORLD_MIN[1]+5) {
-         iParticle.position[1] += ( SCALED_WORLD_MIN[1]+pad - iParticle.position[1]   ) * wallDamp;
-         }
-         */
-
 
         for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
 
@@ -488,34 +445,23 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
         }
     }
 
-    // console.log("step5");
-
-
     // calculate relaxed positions:
 
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
 
-        var pressure = k * (iParticle.density - rho_0);
-        var nearPressure = k_near * iParticle.nearDensity;
-
-        //console.log("pressure ", pressure);
-        //console.log("nearPressure ", nearPressure);
-
+        var pressure = stiffness * (iParticle.density - restDensity);
+        var nearPressure = nearStiffness * iParticle.nearDensity;
 
         var nearParticles = this.hash.getNearParticles(iParticle);
 
         for (var j = 0; j < nearParticles.length; ++j) {
 
-
             var jParticle = nearParticles[j];
 
             var dp = [0.0, 0.0];
             vec2.subtract(dp, iParticle.position, jParticle.position);
-            //float dx = pj.x - pi.x;
-            //float dy = pj.y - pi.y;
-
 
             var r2 = vec2.dot(dp, dp);
 
@@ -526,27 +472,19 @@ Water.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
             var a = 1 - r / h;
 
             var D = ( pressure * a + nearPressure * a * a ) * 0.5;
-
             var DA = [0.0, 0.0];
-
             vec2.scale(DA, dp, D / r);
-
-            // console.log("generate pressure: ", DA );
-
-
             vec2.scaleAndAdd(iParticle.f, iParticle.f, DA, 1.0);
             vec2.scaleAndAdd(jParticle.f, jParticle.f, DA, -1.0);
-
-
         }
     }
 
 
 }
 
-Water.prototype.draw = function (gl) {
+Simulation.prototype.draw = function (gl) {
 
-  //  Water.prototype.addCapsule = function (mousePos) {
+  //  Simulation.prototype.addCapsule = function (mousePos) {
 //        var mMousePos = this.mapMousePos(mousePos);
 
         this.renderer.draw(gl, this.collisionBodies, this.particles,
@@ -554,7 +492,7 @@ Water.prototype.draw = function (gl) {
             );
 }
 
-Water.prototype.mapMousePos = function (mousePos) {
+Simulation.prototype.mapMousePos = function (mousePos) {
 
     // we map the mouse pos to the coordinate system of the water simultation
     return [
@@ -567,19 +505,19 @@ Water.prototype.mapMousePos = function (mousePos) {
 }
 
 // return the minimum pixel position of the simulation.
-Water.prototype.getMinPos = function() {
+Simulation.prototype.getMinPos = function() {
     var x = ((WORLD_MIN[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
     var y = this.canvasHeight - (((WORLD_MAX[1] + 1) / 2.0) * this.canvasHeight);
     return [x,y];
 }
 
-Water.prototype.getMaxPos = function() {
+Simulation.prototype.getMaxPos = function() {
     var x = ((WORLD_MAX[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
     var y = this.canvasHeight - (((WORLD_MIN[1] + 1) / 2.0) * this.canvasHeight);
     return [x,y];
 }
 
-Water.prototype.removeCapsule = function (mousePos) {
+Simulation.prototype.removeCapsule = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
     for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
@@ -596,7 +534,7 @@ Water.prototype.removeCapsule = function (mousePos) {
 
 }
 
-Water.prototype.addCapsule = function (mousePos, capsuleRadius) {
+Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
     if(this.newCapsule != null) {
         // add the capsule.
@@ -614,14 +552,14 @@ Water.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
 }
 
-Water.prototype.addEmitter = function(mousePos) {
+Simulation.prototype.addEmitter = function(mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
     this.emitters.push(new Emitter([mMousePos[0]/WORLD_SCALE, mMousePos[1]/WORLD_SCALE   ]  ));
 }
 
 // return index of emitter under the cursor.
-Water.prototype.findEmitter = function(mousePos) {
+Simulation.prototype.findEmitter = function(mousePos) {
 
     var mMousePos = this.mapMousePos(mousePos);
 
@@ -637,14 +575,14 @@ Water.prototype.findEmitter = function(mousePos) {
 }
 
 
-Water.prototype.removeEmitter = function(mousePos) {
+Simulation.prototype.removeEmitter = function(mousePos) {
     var i = this.findEmitter(mousePos);
     if(i != -1) {
         this.emitters.splice(i, 1);
     }
 }
 
-Water.prototype.selectEmitter = function(mousePos) {
+Simulation.prototype.selectEmitter = function(mousePos) {
     var i = this.findEmitter(mousePos);
     if(i != -1) {
         return this.emitters[i]
@@ -653,13 +591,11 @@ Water.prototype.selectEmitter = function(mousePos) {
     }
 }
 
-
-
-Water.prototype.cancelAddCapsule = function () {
+Simulation.prototype.cancelAddCapsule = function () {
     this.newCapsule = null;
 }
 
-module.exports = Water;
+module.exports = Simulation;
 
 /*
  http://prideout.net/blog/?p=58
