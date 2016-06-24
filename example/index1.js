@@ -54,12 +54,14 @@ var total = 0;
 
 var first = true;
 
+var updateRate = 0.02;
+
 shell.on("tick", function () {
     var canvas = shell.canvas;
 
     //  console.log("myfs: ", myfs);
 
-    water.update(canvas.width, canvas.height, shell.mouse, 0.02);
+    water.update(canvas.width, canvas.height, shell.mouse, updateRate);
 
 
 });
@@ -167,97 +169,115 @@ shell.on("gl-render", function (t) {
 
         myfs = null;
         // Request 1MB
-        var bytes = 1024 * 1024 * 32;
+        var bytes = 1024 * 1024 * 100; // 100MB
         window.webkitStorageInfo.requestQuota(PERSISTENT, bytes, function (grantedBytes) {
             console.log('Got storage', grantedBytes);
             window.webkitRequestFileSystem(PERSISTENT, grantedBytes, function (fs) {
+
                 window.fs = fs;
                 console.log("Got filesystem");
 
-                var name = Math.random(); // File name doesn't matter
-                fs.root.getFile(name, {create: true}, function (entry) {
-                    entry.createWriter(function (writer) {
+                var totalTime  = 0.0;
 
-                        var min = water.getMinPos();
-                        var max = water.getMaxPos();
-                        min = [Math.floor(min[0]), Math.floor(min[1])];
-                        max = [Math.floor(max[0]), Math.floor(max[1])];
+                function create_random_file() {
 
-                        var width = max[0] - min[0];
-                        var height = max[1] - min[1];
-/*
-                        console.log("min: ", min);
-                        console.log("max: ", max);
-                        console.log("sizes: ", canvas.width, canvas.height);
-                        console.log("img sizes: ", width, height);
-*/
-                        first = false;
+                    var name = Math.random(); // File name doesn't matter
+                    fs.root.getFile(name, {create: true}, function (entry) {
+                        entry.createWriter(function (writer) {
 
-                        var bufferArray = new Uint8Array(width * height * 4);
+                            var min = water.getMinPos();
+                            var max = water.getMaxPos();
+                            min = [Math.floor(min[0]), Math.floor(min[1])];
+                            max = [Math.floor(max[0]), Math.floor(max[1])];
 
-                        water.draw(gl);
-                        gl.flush();
-                        gl.finish();
+                            var width = max[0] - min[0];
+                            var height = max[1] - min[1];
+                            /*
+                             console.log("min: ", min);
+                             console.log("max: ", max);
+                             console.log("sizes: ", canvas.width, canvas.height);
+                             console.log("img sizes: ", width, height);
+                             */
+                            first = false;
 
+                            var bufferArray = new Uint8Array(width * height * 4);
 
-                   //     console.log("readpixels: ", min[0], min[1], width, height);
-                        gl.readPixels(min[0], min[1]/*-100*/, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bufferArray);
-
-
-                        // Convert base64 to binary without UTF-8 mangling.
-                        var buffer = new Uint8Array(18 + width * height * 3);
-                        var j = 0;
-
-                        buffer[j++] = 0;
-                        buffer[j++] = 0;
-                        buffer[j++] = 2;
-                        buffer[j++] = 0;     buffer[j++] = 0;
-                        buffer[j++] = 0;     buffer[j++] = 0;
-
-                        buffer[j++] = 0;
-                        buffer[j++] = 0;     buffer[j++] = 0;
-                        buffer[j++] = 0;     buffer[j++] = 0;
-                        buffer[j++] = width & 0x00FF;
-                        buffer[j++] = (width & 0xFF00) / 256;
-
-                        buffer[j++] = height & 0x00FF;
-                        buffer[j++] = (height & 0xFF00) / 256;
-                        buffer[j++] = 24;
-                        buffer[j++] = 0;
-
-                        for (var i = 0; i < width*height*4; i+=4) {
-
-                            buffer[j++] = bufferArray[i+2];
-
-                            buffer[j++] = bufferArray[i+1];
-
-                            buffer[j++] = bufferArray[i+0];
-                        }
-                        /*
-
-                        console.log("START MEW");
-                        for(var i = 0; i < 200; i+=3) {
-                            console.log("r: ", buffer[i+0]);
-                            console.log("g: ", buffer[i+1]);
-                            console.log("b: ", buffer[i+2]);
+                            totalTime += updateRate;
+                            water.update(canvas.width, canvas.height, shell.mouse, updateRate);
+                            water.draw(gl);
+                            gl.flush();
+                            gl.finish();
 
 
-                        }
+                            //     console.log("readpixels: ", min[0], min[1], width, height);
+                            gl.readPixels(min[0], min[1]/*-100*/, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bufferArray);
 
-                        console.log("wrap: ", buffer.length );
-*/
 
-                        // Write data
-                        var blob = new Blob([buffer], {type: 'image/bmp'} );
-                        writer.seek(0);
-                        writer.write(blob);
+                            // Convert base64 to binary without UTF-8 mangling.
+                            var buffer = new Uint8Array(18 + width * height * 3);
+                            var j = 0;
 
-                        console.log('Writing file', frames, blob.size);
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
+                            buffer[j++] = 2;
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
 
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
+                            buffer[j++] = 0;
+                            buffer[j++] = width & 0x00FF;
+                            buffer[j++] = (width & 0xFF00) / 256;
+
+                            buffer[j++] = height & 0x00FF;
+                            buffer[j++] = (height & 0xFF00) / 256;
+                            buffer[j++] = 24;
+                            buffer[j++] = 0;
+
+                            for (var i = 0; i < width * height * 4; i += 4) {
+
+                                buffer[j++] = bufferArray[i + 2];
+
+                                buffer[j++] = bufferArray[i + 1];
+
+                                buffer[j++] = bufferArray[i + 0];
+                            }
+                            /*
+
+                             console.log("START MEW");
+                             for(var i = 0; i < 200; i+=3) {
+                             console.log("r: ", buffer[i+0]);
+                             console.log("g: ", buffer[i+1]);
+                             console.log("b: ", buffer[i+2]);
+
+
+                             }
+
+                             console.log("wrap: ", buffer.length );
+                             */
+
+                            // Write data
+                            var blob = new Blob([buffer], {type: 'image/bmp'});
+                            writer.seek(0);
+                            writer.write(blob);
+
+                            console.log('Writing file', frames, blob.size);
+
+                            if(totalTime < 3.0)
+                                create_random_file();
+
+                        });
+                    }, function () {
+                        console.log('File error', arguments);
                     });
-                }, function () {
-                    console.log('File error', arguments);
-                });
+
+                }
+
+                create_random_file();
 
 
             });
