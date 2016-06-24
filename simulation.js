@@ -181,7 +181,7 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
     this.renderer.update(canvasWidth, canvasHeight);
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
-    
+
     /*
     Below, we implement the water simulation. It is based on the paper
     "Particle-based Viscoelastic Fluid Simulation"
@@ -202,15 +202,20 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
         iParticle.nearDensity = 0.0;
         iParticle.density = 0.0;
 
-        if (!iParticle.isNew)
+        if (!iParticle.isNew) {
+            /*
+            To compute the position, we use the prediction-relaxation scheme described in the paper:
+             */
             vec2.subtract(iParticle.velocity, iParticle.position, iParticle.o);
+            vec2.scale(iParticle.velocity, iParticle.velocity, 1.0 / 1.0);
+        }
 
         iParticle.isNew = false;
 
         iParticle.velocity[1] += gravity;
 
         // do viscosity impules(algorithm 5 from the paper)
-        this.doViscosityImpules(iParticle);
+        this.doViscosityImpules(iParticle, 1.0);
     }
 
     for (var i = 0; i < this.particles.length; ++i) {
@@ -230,10 +235,10 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
     }
 
     // below we do double density relaxation(algorithm 2 in the paper)
-    this.doubleDensityRelaxation();
+    this.doubleDensityRelaxation(1.0);
 }
 
-Simulation.prototype.doViscosityImpules = function(iParticle) {
+Simulation.prototype.doViscosityImpules = function(iParticle, delta) {
 
     var nearParticles = this.hash.getNearParticles(iParticle);
     for (var j = 0; j < nearParticles.length; ++j) {
@@ -261,14 +266,14 @@ Simulation.prototype.doViscosityImpules = function(iParticle) {
 
         var T = 0;
         if (u > 0) {
-            T = one_minus_q * (sigma * u + beta * u * u) * 0.5;
+            T = delta * one_minus_q * (sigma * u + beta * u * u) * 0.5;
             if (T < u) {
                 T = T;
             } else {
                 T = u;
             }
         } else {
-            T = one_minus_q * (sigma * u - beta * u * u) * 0.5;
+            T = delta * one_minus_q * (sigma * u - beta * u * u) * 0.5;
             if (T > u) {
                 T = T;
             } else {
@@ -430,7 +435,7 @@ Simulation.prototype.handleCollision = function(iParticle) {
 }
 
 
-Simulation.prototype.doubleDensityRelaxation = function () {
+Simulation.prototype.doubleDensityRelaxation = function (delta) {
 
     for (var i = 0; i < this.particles.length; ++i) {
 
@@ -453,7 +458,7 @@ Simulation.prototype.doubleDensityRelaxation = function () {
             var r = Math.sqrt(r2);
             var a = 1 - r / h;
 
-            var D = ( pressure * a + nearPressure * a * a ) * 0.5;
+            var D = delta*delta*( pressure * a + nearPressure * a * a ) * 0.5;
             var DA = [0.0, 0.0];
             vec2.scale(DA, dp, D / r);
             vec2.scaleAndAdd(iParticle.f, iParticle.f, DA, 1.0);
