@@ -568,11 +568,15 @@ Water.prototype.mapMousePos = function (mousePos) {
 
 // return the minimum pixel position of the simulation.
 Water.prototype.getMinPos = function() {
-    return toPixel(  this.canvasWidth, this.canvasHeight, WORLD_MIN);
+    var x = ((WORLD_MIN[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
+    var y = this.canvasHeight - (((WORLD_MAX[1] + 1) / 2.0) * this.canvasHeight);
+    return [x,y];
 }
 
 Water.prototype.getMaxPos = function() {
-    return toPixel(  this.canvasWidth, this.canvasHeight, WORLD_MAX);
+    var x = ((WORLD_MAX[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
+    var y = this.canvasHeight - (((WORLD_MIN[1] + 1) / 2.0) * this.canvasHeight);
+    return [x,y];
 }
 
 Water.prototype.removeCapsule = function (mousePos) {

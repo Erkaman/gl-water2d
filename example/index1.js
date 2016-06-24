@@ -167,7 +167,7 @@ shell.on("gl-render", function (t) {
 
         myfs = null;
         // Request 1MB
-        var bytes = 1024 * 1024 * 4;
+        var bytes = 1024 * 1024 * 32;
         window.webkitStorageInfo.requestQuota(PERSISTENT, bytes, function (grantedBytes) {
             console.log('Got storage', grantedBytes);
             window.webkitRequestFileSystem(PERSISTENT, grantedBytes, function (fs) {
@@ -178,7 +178,6 @@ shell.on("gl-render", function (t) {
                 fs.root.getFile(name, {create: true}, function (entry) {
                     entry.createWriter(function (writer) {
 
-
                         var min = water.getMinPos();
                         var max = water.getMaxPos();
                         min = [Math.floor(min[0]), Math.floor(min[1])];
@@ -186,12 +185,12 @@ shell.on("gl-render", function (t) {
 
                         var width = max[0] - min[0];
                         var height = max[1] - min[1];
-
+/*
                         console.log("min: ", min);
                         console.log("max: ", max);
                         console.log("sizes: ", canvas.width, canvas.height);
                         console.log("img sizes: ", width, height);
-
+*/
                         first = false;
 
                         var bufferArray = new Uint8Array(width * height * 4);
@@ -201,14 +200,14 @@ shell.on("gl-render", function (t) {
                         gl.finish();
 
 
-
-                        gl.readPixels(min[0], min[1], width, height, gl.RGBA, gl.UNSIGNED_BYTE, bufferArray);
+                   //     console.log("readpixels: ", min[0], min[1], width, height);
+                        gl.readPixels(min[0], min[1]/*-100*/, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bufferArray);
 
 
                         // Convert base64 to binary without UTF-8 mangling.
                         var buffer = new Uint8Array(18 + width * height * 3);
                         var j = 0;
-                        
+
                         buffer[j++] = 0;
                         buffer[j++] = 0;
                         buffer[j++] = 2;
@@ -220,7 +219,7 @@ shell.on("gl-render", function (t) {
                         buffer[j++] = 0;     buffer[j++] = 0;
                         buffer[j++] = width & 0x00FF;
                         buffer[j++] = (width & 0xFF00) / 256;
-                        
+
                         buffer[j++] = height & 0x00FF;
                         buffer[j++] = (height & 0xFF00) / 256;
                         buffer[j++] = 24;
@@ -228,20 +227,14 @@ shell.on("gl-render", function (t) {
 
                         for (var i = 0; i < width*height*4; i+=4) {
 
-                            if(i < 30) {
-                                console.log("r: ", bufferArray[i+0]);
-                                console.log("g: ", bufferArray[i+1]);
-                                console.log("b: ", bufferArray[i+2]);
-
-                            }
-
                             buffer[j++] = bufferArray[i+0];
                             buffer[j++] = bufferArray[i+1];
                             buffer[j++] = bufferArray[i+2];
                         }
+                        /*
 
                         console.log("START MEW");
-                        for(var i = 0; i < 30; i+=3) {
+                        for(var i = 0; i < 200; i+=3) {
                             console.log("r: ", buffer[i+0]);
                             console.log("g: ", buffer[i+1]);
                             console.log("b: ", buffer[i+2]);
@@ -249,8 +242,11 @@ shell.on("gl-render", function (t) {
 
                         }
 
+                        console.log("wrap: ", buffer.length );
+*/
+
                         // Write data
-                        var blob = new Blob([buffer], {});
+                        var blob = new Blob([buffer], {type: 'image/bmp'} );
                         writer.seek(0);
                         writer.write(blob);
 
