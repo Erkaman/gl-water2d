@@ -1,5 +1,3 @@
-
-
 module.exports.vert = `
 precision mediump float;
  
@@ -27,17 +25,11 @@ void main() {
   vec4 sample = texture2D(uTex, vUv);
   //gl_FragColor = vec4(vColor.xyz * sample.xyz, sample.x * vColor.a );
   
-  
   if(vUv.x == 2.0) {
- 
-  gl_FragColor = vec4(vColor.xyz ,1.0 );
-  
+     gl_FragColor = vec4(vColor.xyz ,1.0 );
   } else {
- gl_FragColor = vec4(sample.xyz * vColor.xyz, sample.a);
+     gl_FragColor = vec4(sample.xyz * vColor.xyz, sample.a);
  
   }
-  
-  
- 
 }
 `

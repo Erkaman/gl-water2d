@@ -16,10 +16,7 @@ var renderMult = dt.renderMult;
 var vec2 = require('gl-vec2');
 var vec3 = require('gl-vec3');
 
-
-
 const CAPSULE_SEGMENTS = 40;
-
 
 // convert from world coordinates to pixel coordinates.
 function toPixel(canvasWidth, canvasHeight, position) {
@@ -158,8 +155,6 @@ Renderer.prototype.update = function (canvasWidth, canvasHeight) {
 
 
 Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, emitters) {
-
-
 
     /*
      Create geometry.

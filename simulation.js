@@ -10,13 +10,6 @@ var SpatialHash = require("./spatial_hash.js");
 var createRenderer = require("./renderer.js");
 var toPixel = require("./renderer.js").toPixel;
 
-/*
- function Circle(position, radius, color) {
- this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
- this.radius = radius * WORLD_SCALE;
- this.color = color;
- }*/
-
 function Capsule(p0, p1, radius, color) {
 
     this.p0 = vec2.fromValues(p0[0] * WORLD_SCALE, p0[1] * WORLD_SCALE);
@@ -97,10 +90,13 @@ Emitter.prototype.eval = function (x) {
     return vec2.length(o_minus_x) - r;
 }
 
+// this is the min and max points of the simulation world.
 var WORLD_MIN = [-0.6, -0.6];
 var WORLD_MAX = [+0.6, +0.9];
-var WORLD_SCALE = dt.WORLD_SCALE;
 
+// however, we scale the entire simulation world by WORLD_SCALE, in order to make
+// sure that it doesn't run too fast.
+var WORLD_SCALE = dt.WORLD_SCALE;
 var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
@@ -471,7 +467,7 @@ Simulation.prototype.draw = function (gl) {
 
 Simulation.prototype.mapMousePos = function (mousePos) {
 
-    // we map the mouse pos to the coordinate system of the water simultation
+    // below we map the mouse pos(in pixel coordinates) to the coordinate system of the water simultation
     return [
         WORLD_SCALE * (mousePos[0] - ( this.canvasWidth - this.canvasHeight ) * 0.5 - 0.5 * this.canvasHeight) * (  2.0 / this.canvasHeight ),
         (-1 + 2 * (  mousePos[1] / this.canvasHeight )) * WORLD_SCALE,
@@ -486,12 +482,14 @@ Simulation.prototype.getMinPos = function () {
     return [x, y];
 }
 
+// return the minimum pixel position of the simulation.
 Simulation.prototype.getMaxPos = function () {
     var x = ((WORLD_MAX[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
     var y = this.canvasHeight - (((WORLD_MIN[1] + 1) / 2.0) * this.canvasHeight);
     return [x, y];
 }
 
+// remove capsule, if we are hovering over one.
 Simulation.prototype.removeCapsule = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
@@ -508,6 +506,8 @@ Simulation.prototype.removeCapsule = function (mousePos) {
     }
 }
 
+// in the first call of addCapsule, set p0 of capsule
+// in the second call, set p1
 Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
     if (this.newCapsule != null) {
@@ -526,7 +526,6 @@ Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
 Simulation.prototype.addEmitter = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
-
     this.emitters.push(new Emitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]));
 }
 
