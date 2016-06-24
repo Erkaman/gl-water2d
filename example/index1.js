@@ -227,9 +227,11 @@ shell.on("gl-render", function (t) {
 
                         for (var i = 0; i < width*height*4; i+=4) {
 
-                            buffer[j++] = bufferArray[i+0];
-                            buffer[j++] = bufferArray[i+1];
                             buffer[j++] = bufferArray[i+2];
+
+                            buffer[j++] = bufferArray[i+1];
+
+                            buffer[j++] = bufferArray[i+0];
                         }
                         /*
 
