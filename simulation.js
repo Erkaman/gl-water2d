@@ -181,27 +181,27 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
     this.renderer.update(canvasWidth, canvasHeight);
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
+    
+    /*
+    Below, we implement the water simulation. It is based on the paper
+    "Particle-based Viscoelastic Fluid Simulation"
+     http://www.ligum.umontreal.ca/Clavet-2005-PVFS/pvfs.pdf
+     */
 
     this.emitParticles(delta);
     this.removeOutOfBoundsParticles();
 
     this.hash.update(this.particles);
 
-
     for (var i = 0; i < this.particles.length; ++i) {
         var iParticle = this.particles[i];
-
 
         vec2.add(iParticle.position, iParticle.position, iParticle.f);
         iParticle.f = [0.0, 0.0];
 
-        // console.log("move: ", iParticle.position);
-
         iParticle.nearDensity = 0.0;
         iParticle.density = 0.0;
 
-
-        //var diff = vec2.create();
         if (!iParticle.isNew)
             vec2.subtract(iParticle.velocity, iParticle.position, iParticle.o);
 
@@ -209,66 +209,9 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
 
         iParticle.velocity[1] += gravity;
 
-
-        var nearParticles = this.hash.getNearParticles(iParticle);
-
-        for (var j = 0; j < nearParticles.length; ++j) {
-
-            var jParticle = nearParticles[j];
-
-            var dp = [0.0, 0.0];
-            vec2.subtract(dp, iParticle.position, jParticle.position);
-
-            var r2 = vec2.dot(dp, dp);
-
-            if (r2 <= 0.0 || r2 > h * h)
-                continue;
-
-            var r = Math.sqrt(r2);
-
-            var normalized_r = [0.0, 0.0];
-            vec2.scale(normalized_r, dp, 1.0 / r);
-
-            var one_minus_q = 1 - r / h;
-            var vi_minus_vj = [0.0, 0.0];
-
-            vec2.subtract(vi_minus_vj, iParticle.velocity, jParticle.velocity);
-
-            var u = vec2.dot(vi_minus_vj, normalized_r);
-
-
-            var T = 0;
-            if (u > 0) {
-
-                T = one_minus_q * (sigma * u + beta * u * u) * 0.5;
-
-                if (T < u) {
-                    T = T;
-                } else {
-                    T = u;
-                }
-            } else {
-
-                T = one_minus_q * (sigma * u - beta * u * u) * 0.5;
-
-                if (T > u) {
-                    T = T;
-                } else {
-                    T = u;
-                }
-
-            }
-
-            var I_div2 = [0.0, 0.0];
-            vec2.scale(I_div2, normalized_r, T);
-
-            vec2.scaleAndAdd(iParticle.velocity, iParticle.velocity, I_div2, -1.0);
-            vec2.scaleAndAdd(jParticle.velocity, jParticle.velocity, I_div2, +1.0);
-
-
-        }
+        // do viscosity impules(algorithm 5 from the paper)
+        this.doViscosityImpules(iParticle);
     }
-
 
     for (var i = 0; i < this.particles.length; ++i) {
 
@@ -278,7 +221,7 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
         iParticle.o = [iParticle.position[0], iParticle.position[1]];
         vec2.add(iParticle.position, iParticle.position, iParticle.velocity);
 
-        // compute near and far density.
+        // compute near and far density from the paper.
         this.computeDensities(iParticle);
 
         // handle collision with capsules.
@@ -288,6 +231,58 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
 
     // below we do double density relaxation(algorithm 2 in the paper)
     this.doubleDensityRelaxation();
+}
+
+Simulation.prototype.doViscosityImpules = function(iParticle) {
+
+    var nearParticles = this.hash.getNearParticles(iParticle);
+    for (var j = 0; j < nearParticles.length; ++j) {
+        var jParticle = nearParticles[j];
+
+        var dp = [0.0, 0.0];
+        vec2.subtract(dp, iParticle.position, jParticle.position);
+
+        var r2 = vec2.dot(dp, dp);
+
+        if (r2 <= 0.0 || r2 > h * h)
+            continue;
+
+        var r = Math.sqrt(r2);
+
+        var normalized_r = [0.0, 0.0];
+        vec2.scale(normalized_r, dp, 1.0 / r);
+
+        var one_minus_q = 1 - r / h;
+
+        var vi_minus_vj = [0.0, 0.0];
+        vec2.subtract(vi_minus_vj, iParticle.velocity, jParticle.velocity);
+
+        var u = vec2.dot(vi_minus_vj, normalized_r);
+
+        var T = 0;
+        if (u > 0) {
+            T = one_minus_q * (sigma * u + beta * u * u) * 0.5;
+            if (T < u) {
+                T = T;
+            } else {
+                T = u;
+            }
+        } else {
+            T = one_minus_q * (sigma * u - beta * u * u) * 0.5;
+            if (T > u) {
+                T = T;
+            } else {
+                T = u;
+            }
+        }
+
+        var I_div2 = [0.0, 0.0];
+        vec2.scale(I_div2, normalized_r, T);
+
+        vec2.scaleAndAdd(iParticle.velocity, iParticle.velocity, I_div2, -1.0);
+        vec2.scaleAndAdd(jParticle.velocity, jParticle.velocity, I_div2, +1.0);
+
+    }
 }
 
 
