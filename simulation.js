@@ -9,6 +9,7 @@ var dt = require("./data_types.js");
 var SpatialHash = require("./spatial_hash.js");
 var createRenderer = require("./renderer.js");
 var toPixel = require("./renderer.js").toPixel;
+var createLevelData = require("./level_data.js");
 
 function Capsule(p0, p1, radius, color) {
 
@@ -103,21 +104,6 @@ var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 var particleRadius = 0.015 * WORLD_SCALE;
 var h = particleRadius; // support radius
 
-const CAPSULE_COLOR = [0, 0.5, 0];
-
-var gravity = +0.03; // gravity force.
-var sigma = 0.9;
-var beta = 0.3;
-
-// how much of its original velocity that a particle gets to keep when it bounces against a capsule.
-var collisionDamping = 1.0 / 5.0;
-
-// see the paper for definitions of these.
-const restDensity = 10.0;
-const stiffness = 0.009;
-const nearStiffness = 1.2;
-
-
 /*
  Constructor
  */
@@ -126,6 +112,8 @@ function Simulation(gl) {
     this.particles = [];
 
     this.renderer = new createRenderer(gl);
+
+    this.levelData = new createLevelData();
 
     // used when we are adding a new capsule in the GUI.
     this.newCapsule = null;
@@ -136,6 +124,7 @@ function Simulation(gl) {
     // frame
     const CAPSULE_RADIUS = 0.03;
     const FRAME_RADIUS = 0.06;
+    const CAPSULE_COLOR = this.levelData.capsuleColor;
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new Capsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
@@ -205,7 +194,7 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
 
         iParticle.isNew = false;
 
-        iParticle.velocity[1] += gravity * 1.0;
+        iParticle.velocity[1] += this.levelData.gravity.val * 1.0;
 
         // do viscosity impules(algorithm 5 from the paper)
         this.doViscosityImpules(iParticle, 1.0);
@@ -256,6 +245,9 @@ Simulation.prototype.doViscosityImpules = function(iParticle, delta) {
         vec2.subtract(vi_minus_vj, iParticle.velocity, jParticle.velocity);
 
         var u = vec2.dot(vi_minus_vj, normalized_r);
+
+        var sigma = this.levelData.sigma.val;
+        var beta = this.levelData.beta.val;
 
         var T = 0;
         if (u > 0) {
@@ -421,7 +413,7 @@ Simulation.prototype.handleCollision = function(iParticle) {
                 vec2.scale(n, x_sub_q, -Math.sign(Fx) / ( x_sub_q_len  ))
 
                 // bounce particle in the direction of the normal.
-                vec2.scaleAndAdd(iParticle.position, iParticle.position, n, -Fx * collisionDamping);
+                vec2.scaleAndAdd(iParticle.position, iParticle.position, n, -Fx * this.levelData.collisionDamping.val);
             }
         }
     }
@@ -434,8 +426,8 @@ Simulation.prototype.doubleDensityRelaxation = function (delta) {
 
         var iParticle = this.particles[i];
 
-        var pressure = stiffness * (iParticle.density - restDensity);
-        var nearPressure = nearStiffness * iParticle.nearDensity;
+        var pressure = this.levelData.stiffness.val * (iParticle.density - this.levelData.restDensity.val);
+        var nearPressure = this.levelData.nearStiffness.val * iParticle.nearDensity;
 
         var nearParticles = this.hash.getNearParticles(iParticle);
         for (var j = 0; j < nearParticles.length; ++j) {
