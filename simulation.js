@@ -11,14 +11,8 @@ var createRenderer = require("./renderer.js");
 var toPixel = require("./renderer.js").toPixel;
 var createLevelData = require("./level_data.js");
 
-function Capsule(p0, p1, radius, color) {
-
-    this.p0 = vec2.fromValues(p0[0] * WORLD_SCALE, p0[1] * WORLD_SCALE);
-    this.p1 = vec2.fromValues(p1[0] * WORLD_SCALE, p1[1] * WORLD_SCALE);
-
-    this.radius = radius * WORLD_SCALE;
-    this.color = color;
-}
+var createCapsule = require("./data_types.js").Capsule;
+var createEmitter = require("./data_types.js").Emitter;
 
 function Particle(position, velocity, color) {
 
@@ -36,60 +30,7 @@ function Particle(position, velocity, color) {
     this.isNew = true;
 }
 
-// evaluate the implicit function of the capsule on the coordinate x.
-// return positive number if x is outside the capsule
-// return negative number if x is inside the capsule
-// return zero if x is exactly on the border.
-Capsule.prototype.eval = function (x) {
-    var scratch = [0.0, 0.0];
-    var p0 = this.p0;
-    var p1 = this.p1;
-    var r = this.radius;
 
-    var p1_sub_p0 = [0.0, 0.0];
-    vec2.subtract(p1_sub_p0, p1, p0);
-
-    var t = -vec2.dot(vec2.subtract(scratch, p0, x), p1_sub_p0) / vec2.dot(p1_sub_p0, p1_sub_p0);
-    t = clamp(t, 0.0, 1.0);
-
-    var q = [0.0, 0.0];
-    vec2.scaleAndAdd(q, p0, p1_sub_p0, t);
-
-    var Fx = vec2.length(vec2.subtract(scratch, q, x)) - r;
-    return Fx;
-}
-
-
-/*
- If, for instance, frequency=0.1, that means we emit every 100th millisecond. So ten times per second.
- */
-function Emitter(position, frequency) {
-    this.position = position;
-    this.frequency = {val: 0.05};
-    this.timer = 0.0;
-    this.radius = 0.015;
-    this.color = [0.0, 0.0, 1.0];
-
-
-    this.baseAngle = {val: 70};
-    this.angleVelocity = {val: 0};
-    this.angle = {val: 0};
-
-
-    this.strength = {val: 0.006};
-    this.velRand = {val: 2};
-}
-
-Emitter.prototype.eval = function (x) {
-
-    var o = this.position;
-    var r = this.radius;
-
-    var o_minus_x = [0.0, 0.0];
-    vec2.subtract(o_minus_x, o, x);
-
-    return vec2.length(o_minus_x) - r;
-}
 
 // this is the min and max points of the simulation world.
 var WORLD_MIN = [-0.6, -0.6];
@@ -130,15 +71,15 @@ function Simulation(gl) {
     const CAPSULE_RADIUS = 0.03;
     const FRAME_RADIUS = 0.06;
     const CAPSULE_COLOR = this.levelData.capsuleColor;
-    this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new Capsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new Capsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new Capsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new Capsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new Capsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new Capsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, CAPSULE_COLOR));
 
-    this.emitters.push(new Emitter([-0.1, -0.15]));
+    this.emitters.push(new createEmitter([-0.1, -0.15]));
 
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
 
@@ -516,7 +457,7 @@ Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
     } else {
         // make new capsule.
         var mMousePos = this.mapMousePos(mousePos);
-        this.newCapsule = new Capsule([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE], [0.0, 0.0], capsuleRadius, CAPSULE_COLOR);
+        this.newCapsule = new createCapsule([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE], [0.0, 0.0], capsuleRadius, CAPSULE_COLOR);
 
         this.newCapsule.p1 = this.mapMousePos(mousePos);
     }
@@ -525,7 +466,7 @@ Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
 Simulation.prototype.addEmitter = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
-    this.emitters.push(new Emitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]));
+    this.emitters.push(new createEmitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]));
 }
 
 // return index of emitter under the cursor.

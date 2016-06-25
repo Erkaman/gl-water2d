@@ -1,5 +1,5 @@
 
-// this file contains the constant of the simulation
+// this file contains the constants of the simulation
 
 // all the distances are multiplied by this scale, in order to make the simulation not run too fast.
 module.exports.WORLD_SCALE = 260;
