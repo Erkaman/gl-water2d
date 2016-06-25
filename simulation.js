@@ -4,7 +4,7 @@
 var vec3 = require('gl-vec3');
 var vec2 = require('gl-vec2');
 var clamp = require('clamp');
-var dt = require("./data_types.js");
+var consts = require("./consts.js");
 
 var SpatialHash = require("./spatial_hash.js");
 var createRenderer = require("./renderer.js");
@@ -97,7 +97,7 @@ var WORLD_MAX = [+0.6, +0.9];
 
 // however, we scale the entire simulation world by WORLD_SCALE, in order to make
 // sure that it doesn't run too fast.
-var WORLD_SCALE = dt.WORLD_SCALE;
+var WORLD_SCALE = consts.WORLD_SCALE;
 var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
 var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
 
@@ -114,6 +114,11 @@ function Simulation(gl) {
     this.renderer = new createRenderer(gl);
 
     this.levelData = new createLevelData();
+
+    var json = JSON.stringify( this.levelData );
+    console.log("json ", json);
+
+    this.levelData = JSON.parse(json);
 
     // used when we are adding a new capsule in the GUI.
     this.newCapsule = null;
@@ -501,6 +506,8 @@ Simulation.prototype.removeCapsule = function (mousePos) {
 // in the first call of addCapsule, set p0 of capsule
 // in the second call, set p1
 Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
+    const CAPSULE_COLOR = this.levelData.capsuleColor;
+
 
     if (this.newCapsule != null) {
         // add the capsule.

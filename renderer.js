@@ -8,10 +8,10 @@ var mat4 = require("gl-mat4");
 var particleImage = require("./part.js");
 
 var dt = require("./data_types.js");
+var consts = require("./consts.js");
 
-var WORLD_SCALE = dt.WORLD_SCALE;
-
-var renderMult = dt.renderMult;
+var WORLD_SCALE = consts.WORLD_SCALE;
+var renderMult = consts.renderMult;
 
 var vec2 = require('gl-vec2');
 var vec3 = require('gl-vec3');

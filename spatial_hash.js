@@ -28,16 +28,6 @@ function SpatialHash(h, min, max) {
 
     // initialize grid.
     this.grid = [];
-
-
-    console.log("now min: ", this.min);
-    console.log("now max: ", this.max);
-
-    console.log("before min: ", min);
-    console.log("before max: ", max);
-
-
-    console.log("table size: ", this.xSize, this.ySize);
 }
 
 
