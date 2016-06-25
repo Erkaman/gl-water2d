@@ -42,7 +42,7 @@ function LevelData() {
     const FRAME_RADIUS = 0.06;
     const CAPSULE_COLOR = this.capsuleColor;
     this.collisionBodies.push(new createCapsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new createCapsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
+    this.collisionBodies.push(new createCapsule([WORLD_MIN[0] * 1.0, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new createCapsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new createCapsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new createCapsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, CAPSULE_COLOR));

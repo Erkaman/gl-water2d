@@ -1,13 +1,11 @@
 var shaders = require("./shaders.js");
 var createTexture = require('gl-texture2d');
 var createBuffer = require('gl-buffer');
-
 var createShader = require("gl-shader");
 var mat4 = require("gl-mat4");
 
 var particleImage = require("../rsc/part.js");
 
-var dt = require("./data_types.js");
 var consts = require("./consts.js");
 
 var WORLD_SCALE = consts.WORLD_SCALE;
@@ -16,7 +14,8 @@ var renderMult = consts.renderMult;
 var vec2 = require('gl-vec2');
 var vec3 = require('gl-vec3');
 
-const CAPSULE_SEGMENTS = 40;
+const CAPSULE_SEGMENTS = 10;
+const CIRCLE_SEGMENTS = 8;
 
 // convert from world coordinates to pixel coordinates.
 function toPixel(canvasWidth, canvasHeight, position) {
@@ -88,10 +87,6 @@ Mesh.prototype.update = function (canvasWidth, canvasHeight) {
 
 
 Mesh.prototype._addPosition = function (position) {
-
-   // var x = ((position[0] + 1) / 2.0) * this.canvasHeight + (this.canvasWidth - this.canvasHeight) / 2.0;
-  //  var y = (((position[1] + 1) / 2.0) * this.canvasHeight);
-
     var p = toPixel(this.canvasWidth, this.canvasHeight, position);
 
     this.positionBuffer[this.positionBufferIndex++] = p[0];
@@ -142,19 +137,15 @@ function Renderer(gl) {
     this.meshOther = new Mesh(gl);
 
     this.particleTexture = createTexture(gl, particleImage);
-
 }
 
 Renderer.prototype.update = function (canvasWidth, canvasHeight) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
-
     this.meshOther.update(canvasWidth, canvasHeight);
     this.meshParticles.update(canvasWidth, canvasHeight);
-
 }
-
 
 Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, emitters) {
 
@@ -186,7 +177,7 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
         var p = emitter.position;
         var r = emitter.radius;
 
-        this._circle(this.meshOther, p, r, [1.0, 0.0, 0.0], 20);
+        this._circle(this.meshOther, p, r, [1.0, 0.0, 0.0], CIRCLE_SEGMENTS);
     }
 
 
@@ -387,13 +378,10 @@ Renderer.prototype._capsule = function (mesh, p1, p2, radius, color, segments) {
     mesh._addIndex(baseIndex + 1);
     mesh._addIndex(baseIndex + 0);
 
-
     // triangle 2
     mesh._addIndex(baseIndex + 1);
     mesh._addIndex(baseIndex + 2);
     mesh._addIndex(baseIndex + 3);
-
-
 }
 
 Renderer.prototype._arc = function (mesh, centerPosition, radius, direction, color, segments) {
@@ -430,11 +418,6 @@ Renderer.prototype._arc = function (mesh, centerPosition, radius, direction, col
     }
 };
 
-
-/*
- Render a circle, where the top-left corner of the circle is `position`
- Where `segments` is how many triangle segments the triangle is rendered with.
- */
 Renderer.prototype._circle = function (mesh, centerPosition, radius, color, segments) {
 
 

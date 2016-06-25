@@ -156,16 +156,19 @@ shell.on("gl-render", function (t) {
     }
     gui.checkbox("Run simulation", isRunningSimulation);
 
-    
+
     gui.checkbox("Limit Particle Count", water.isLimitParticles);
 
 
 
     
-    
+
     if (water.isLimitParticles.val) {
         gui.sliderInt("Max Particles", water.maxParticles, 0, 10000);
     }
+
+    water.isLimitParticles.val = false;
+
     gui.textLine("Particles: " +  water.getParticleCount() );
 
     gui.separator();
@@ -197,12 +200,7 @@ shell.on("gl-render", function (t) {
 
                             var width = max[0] - min[0];
                             var height = max[1] - min[1];
-                            /*
-                             console.log("min: ", min);
-                             console.log("max: ", max);
-                             console.log("sizes: ", canvas.width, canvas.height);
-                             console.log("img sizes: ", width, height);
-                             */
+
                             first = false;
 
                             var bufferArray = new Uint8Array(width * height * 4);
@@ -215,7 +213,7 @@ shell.on("gl-render", function (t) {
 
 
                             //     console.log("readpixels: ", min[0], min[1], width, height);
-                            gl.readPixels(min[0], min[1]/*-100*/, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bufferArray);
+                            gl.readPixels(min[0], min[1], width, height, gl.RGBA, gl.UNSIGNED_BYTE, bufferArray);
 
 
                             // Convert base64 to binary without UTF-8 mangling.
