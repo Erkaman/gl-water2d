@@ -66,11 +66,6 @@ function Simulation(gl) {
 
     this.isLimitParticles = {val: true};
     this.maxParticles = {val: 1500};
-    
-    var json = JSON.stringify( this.levelData );
-    console.log("json ", json);
-    this.levelData = JSON.parse(json);
-
 }
 
 
@@ -295,27 +290,29 @@ Simulation.prototype.emitParticles = function(delta) {
 
         emitter.timer += delta;
 
-        // console.log("timer: ",  emitter.timer, emitter.frequency );
-
-        if (emitter.timer > emitter.frequency.val && (!this.isLimitParticles.val || (this.particles.length < this.maxParticles.val))) {
+        if (emitter.timer > emitter.frequency.val &&
+            (!this.isLimitParticles.val || (this.particles.length < this.maxParticles.val))) {
 
             var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
 
             if (emitter.angleVelocity.val == 0) {
+                // if not angle velocity, just use base angle
                 emitter.angle.val = emitter.baseAngle.val;
             } else {
+                // if we have angle velocity, ignore base angle, and increase velocity.
                 emitter.angle.val += emitter.angleVelocity.val;
             }
 
 
-            var theta = emitter.angle.val * (Math.PI / 180.0);
-            theta = Math.PI * 2 - theta;
+            var theta = emitter.angle.val * (Math.PI / 180.0); // from degrees to radians.
+            theta = Math.PI * 2 - theta; // make sure that angles goes counter clock-wise
 
             emitter.angle.val += emitter.angleVelocity.val;
 
             const strength = emitter.strength.val;
             const velocity = [strength * Math.cos(theta), strength * Math.sin(theta)];
 
+            // find vector that is perpendicular to velocity.
             const v = [-velocity[1], velocity[0]];
 
             var c = [emitter.color[0], emitter.color[1], emitter.color[2]];
