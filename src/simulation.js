@@ -78,9 +78,6 @@ function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-
-var timeCount = 0;
-
 Simulation.prototype.reset = function () {
     this.particles = [];
 }
