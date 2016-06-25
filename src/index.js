@@ -9,31 +9,36 @@ var vec3 = require("gl-vec3");
 var createWater = require("./simulation.js");
 var saveAs = require('filesaver.js').saveAs;
 
-
+/*
+These are used by the GUI
+ */
 var mouseLeftDownPrev = false;
 var pressed;
 var io;
 
-var bg = [0.6, 0.7, 1.0]; // clear color.
-
+/*
+the water simulation.
+ */
 var water;
 
-// edit modes
+
+// edit modes. Used by GUI
 const EM_REMOVE_CAPSULE = 0;
 const EM_ADD_CAPSULE = 1;
 const EM_ADD_EMITTER = 2;
 const EM_REMOVE_EMITTER = 3;
 const EM_EDIT_EMITTER = 4;
-
 var editMode = {val: EM_ADD_CAPSULE};
 
 var editEmitter = null; // the emitter being edited.
 
-var capsuleRadius = {val: 0.05};
-
-var myfs;
+var capsuleRadius = {val: 0.05}; // capsule radius of capsules that we add.
 
 var importMessage = "No Message";
+
+// ammount of seconds between the update steps of the water simulation.
+const updateRate = 0.02;
+
 
 function hash(text) {
 
@@ -59,64 +64,36 @@ shell.on("gl-init", function () {
     gui.windowAlpha = 1.0;
 
     water = new createWater(gl);
-
-//    rockShader = glShader(gl, glslify("./rock_vert.glsl"), glslify("./rock_frag.glsl"));
-
-
 });
 
-var total = 0;
 
-var first = true;
-
-var updateRate = 0.02;
+var firstTime = true;
 
 shell.on("tick", function () {
     var canvas = shell.canvas;
 
-    //  console.log("myfs: ", myfs);
+/*
+    if(firstTime) {
+        for(var i = 0; i < 1000; ++i) {
+            water.update(canvas.width, canvas.height, shell.mouse, updateRate);
+        }
+        firstTime = false;
+
+    }
+    */
 
     water.update(canvas.width, canvas.height, shell.mouse, updateRate);
-
-
 });
-
 
 shell.on("gl-render", function (t) {
     var gl = shell.gl;
     var canvas = shell.canvas;
 
-
     water.draw(gl);
 
     /*
-     if(first) {
-
-     var min = water.getMinPos();
-     var max = water.getMaxPos();
-     var width = max[0] - min[0];
-     var height = max[1] - min[1];
-
-     console.log("min: ", min);
-     console.log("max: ", max);
-     console.log("sizes: ", canvas.width, canvas.height);
-
-     first = false;
-
-     var array = new Uint8Array(width * height * 4);
-
-     gl.readPixels(min[0], min[1], width, height, gl.RGBA, gl.UNSIGNED_BYTE, array);
-
-     for(var i = 0; i < 20; i+=4) {
-     console.log("r: ", array[i+0] );
-     console.log("g: ", array[i+1] );
-     console.log("b: ", array[i+2] );
-     console.log("a: ", array[i+3] );
-     }
-
-     }
+    Gather information needed by the GUI
      */
-
     pressed = shell.wasDown("mouse-left");
     io = {
         mouseLeftDownCur: pressed,
@@ -126,6 +103,10 @@ shell.on("gl-render", function (t) {
         mousePositionPrev: shell.prevMouse
     };
     mouseLeftDownPrev = pressed;
+
+    /*
+    Create GUI
+     */
 
     gui.begin(io, "Editor");
 
@@ -340,7 +321,7 @@ var rightClicked = false;
 shell.on("tick", function () {
     var gl = shell.gl
 
-    // if interacting with the GUI, do not let the mouse control the camera.
+    // if interacting with the GUI, do not let the mouse control the simulation.
     if (gui.hasMouseFocus())
         return;
 
@@ -348,7 +329,6 @@ shell.on("tick", function () {
     var rightDown = shell.wasDown("mouse-right");
 
     if (!leftClicked && leftDown == true) {
-        console.log("lrft CLICK");
 
         if (editMode.val == EM_REMOVE_CAPSULE) {
             water.removeCapsule(shell.mouse);
@@ -372,7 +352,6 @@ shell.on("tick", function () {
     }
 
     if (!rightClicked && rightDown == true) {
-        console.log("right CLICK");
 
         if (editMode.val == EM_ADD_CAPSULE) {
             water.cancelAddCapsule();
@@ -387,8 +366,4 @@ shell.on("tick", function () {
     if (rightDown == false) {
         rightClicked = false;
     }
-
-    /*
-     HANDLE MOUSE INPUT
-     */
 });
