@@ -34,12 +34,9 @@ var h = consts.h;
 function Particle(position, velocity, color) {
 
     this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
-
     this.velocity = vec2.fromValues(velocity[0] * WORLD_SCALE, velocity[1] * WORLD_SCALE);
 
-    // console.log("add part: ", this.position );
     this.color = color;
-
     this.radius = particleRadius;
 
     this.o = [this.position[0], this.position[1]];
@@ -130,6 +127,8 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
      http://www.ligum.umontreal.ca/Clavet-2005-PVFS/pvfs.pdf
      */
 
+    this.nearParticlesCache = [];
+
     this.emitParticles(delta);
     this.removeOutOfBoundsParticles();
 
@@ -138,9 +137,10 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
     for (var i = 0; i < this.particles.length; ++i) {
         var iParticle = this.particles[i];
 
+        // apply the forces resulting from the pressure.
         vec2.add(iParticle.position, iParticle.position, iParticle.f);
-        iParticle.f = [0.0, 0.0];
 
+        iParticle.f = [0.0, 0.0];
         iParticle.nearDensity = 0.0;
         iParticle.density = 0.0;
 
@@ -149,27 +149,28 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
             To compute the position, we use the prediction-relaxation scheme described in the paper:
              */
             vec2.subtract(iParticle.velocity, iParticle.position, iParticle.o);
-            vec2.scale(iParticle.velocity, iParticle.velocity, 1.0 / 1.0);
+            //vec2.scale(iParticle.velocity, iParticle.velocity, 1.0 / 1.0);
         }
 
         iParticle.isNew = false;
 
+        // apply gravity.
         iParticle.velocity[1] += this.levelData.gravity.val * 1.0;
 
-        // do viscosity impules(algorithm 5 from the paper)
-        this.doViscosityImpules(iParticle, 1.0);
+        // do viscosity impules to modify velocity(algorithm 5 from the paper)
+        this.doViscosityImpules(i, 1.0);
     }
 
     for (var i = 0; i < this.particles.length; ++i) {
 
         var iParticle = this.particles[i];
 
-        // save the original particle position.
+        // save the original particle position, then apply velocity.
         iParticle.o = [iParticle.position[0], iParticle.position[1]];
         vec2.add(iParticle.position, iParticle.position, iParticle.velocity);
 
         // compute near and far density from the paper.
-        this.computeDensities(iParticle);
+        this.computeDensities(i);
 
         // handle collision with capsules.
         this.handleCollision(iParticle);
@@ -180,14 +181,17 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
     this.doubleDensityRelaxation(1.0);
 }
 
-Simulation.prototype.doViscosityImpules = function(iParticle, delta) {
+Simulation.prototype.doViscosityImpules = function(i, delta) {
 
 
+    var iParticle  = this.particles[i];
     // do viscosity impules(algorithm 5 from the paper)
     //but note that we are not doing the exact same thing they are doing in the paper,
     // but a slight variation.
 
     var nearParticles = this.hash.getNearParticles(iParticle);
+    this.nearParticlesCache[i] = nearParticles;
+
     for (var j = 0; j < nearParticles.length; ++j) {
         var jParticle = nearParticles[j];
 
@@ -241,9 +245,11 @@ Simulation.prototype.doViscosityImpules = function(iParticle, delta) {
 }
 
 
-Simulation.prototype.computeDensities = function(iParticle) {
+Simulation.prototype.computeDensities = function(i) {
 
-    var nearParticles = this.hash.getNearParticles(iParticle);
+    var nearParticles = this.nearParticlesCache[i];
+    var iParticle = this.particles[i];
+
     for (var j = 0; j < nearParticles.length; ++j) {
 
         var jParticle = nearParticles[j];
@@ -396,7 +402,9 @@ Simulation.prototype.doubleDensityRelaxation = function (delta) {
         var pressure = this.levelData.stiffness.val * (iParticle.density - this.levelData.restDensity.val);
         var nearPressure = this.levelData.nearStiffness.val * iParticle.nearDensity;
 
-        var nearParticles = this.hash.getNearParticles(iParticle);
+
+        var nearParticles = this.nearParticlesCache[i];
+
         for (var j = 0; j < nearParticles.length; ++j) {
             var jParticle = nearParticles[j];
 
