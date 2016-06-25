@@ -82,8 +82,8 @@ shell.on("tick", function () {
          }
          firstTime = false;
 
-         }*/
-         
+         }
+         */
 
         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
     

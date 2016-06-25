@@ -187,6 +187,11 @@ Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, del
 
 Simulation.prototype.doViscosityImpules = function(iParticle, delta) {
 
+
+    // do viscosity impules(algorithm 5 from the paper)
+    //but note that we are not doing the exact same thing they are doing in the paper,
+    // but a slight variation.
+
     var nearParticles = this.hash.getNearParticles(iParticle);
     for (var j = 0; j < nearParticles.length; ++j) {
         var jParticle = nearParticles[j];
