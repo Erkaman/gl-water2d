@@ -78,12 +78,12 @@ shell.on("tick", function () {
         /*
          if(firstTime) {
          for(var i = 0; i < 1000; ++i) {
-         water.update(canvas.width, canvas.height, shell.mouse, updateRate);
+         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
          }
          firstTime = false;
 
-         }
-         */
+         }*/
+         
 
         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
     
@@ -159,17 +159,18 @@ shell.on("gl-render", function (t) {
     
     gui.checkbox("Limit Particle Count", water.isLimitParticles);
 
+
+
     
     
     if (water.isLimitParticles.val) {
         gui.sliderInt("Max Particles", water.maxParticles, 0, 10000);
     }
+    gui.textLine("Particles: " +  water.getParticleCount() );
 
     gui.separator();
 
-
     if (gui.button("Record")) {
-
 
         myfs = null;
         // Request 1MB
@@ -207,7 +208,7 @@ shell.on("gl-render", function (t) {
                             var bufferArray = new Uint8Array(width * height * 4);
 
                             totalTime += updateRate;
-                            water.update(canvas.width, canvas.height, shell.mouse, updateRate);
+                            water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
                             water.draw(gl);
                             gl.flush();
                             gl.finish();
@@ -250,19 +251,7 @@ shell.on("gl-render", function (t) {
 
                                 buffer[j++] = bufferArray[i + 0];
                             }
-                            /*
 
-                             console.log("START MEW");
-                             for(var i = 0; i < 200; i+=3) {
-                             console.log("r: ", buffer[i+0]);
-                             console.log("g: ", buffer[i+1]);
-                             console.log("b: ", buffer[i+2]);
-
-
-                             }
-
-                             console.log("wrap: ", buffer.length );
-                             */
 
                             // Write data
                             var blob = new Blob([buffer], {type: 'image/bmp'});

@@ -78,6 +78,10 @@ function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+Simulation.prototype.getParticleCount = function () {
+    return this.particles.length;
+}
+
 Simulation.prototype.reset = function () {
     this.particles = [];
 }
@@ -105,6 +109,7 @@ Simulation.prototype.import = function(json) {
     this.levelData = obj;
     return true;
 }
+
 
 Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta, isRunningSimulation) {
 
