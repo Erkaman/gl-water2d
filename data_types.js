@@ -4,6 +4,8 @@
 
 
 var vec2 = require('gl-vec2');
+var clamp = require('clamp');
+
 
 var consts = require("./consts.js");
 var WORLD_SCALE = consts.WORLD_SCALE;
@@ -21,11 +23,11 @@ function Capsule(p0, p1, radius, color) {
 // return positive number if x is outside the capsule
 // return negative number if x is inside the capsule
 // return zero if x is exactly on the border.
-Capsule.prototype.eval = function (x) {
+var capsuleImplicit = function (capsule, x) {
     var scratch = [0.0, 0.0];
-    var p0 = this.p0;
-    var p1 = this.p1;
-    var r = this.radius;
+    var p0 = capsule.p0;
+    var p1 = capsule.p1;
+    var r = capsule.radius;
 
     var p1_sub_p0 = [0.0, 0.0];
     vec2.subtract(p1_sub_p0, p1, p0);
@@ -67,10 +69,10 @@ function Emitter(position, frequency) {
 // return positive number if x is outside the emitter
 // return negative number if x is inside the emitter
 // return zero if x is exactly on the border.
-Emitter.prototype.eval = function (x) {
+var emitterImplicit = function (emitter, x) {
 
-    var o = this.position;
-    var r = this.radius;
+    var o = emitter.position;
+    var r = emitter.radius;
 
     var o_minus_x = [0.0, 0.0];
     vec2.subtract(o_minus_x, o, x);
@@ -80,6 +82,10 @@ Emitter.prototype.eval = function (x) {
 
 module.exports.Capsule = Capsule;
 module.exports.Emitter = Emitter;
+module.exports.emitterImplicit = emitterImplicit;
+module.exports.capsuleImplicit = capsuleImplicit;
+
+
 
 
 

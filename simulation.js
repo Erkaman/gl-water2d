@@ -3,8 +3,8 @@
  */
 var vec3 = require('gl-vec3');
 var vec2 = require('gl-vec2');
-var clamp = require('clamp');
 var consts = require("./consts.js");
+var clamp = require('clamp');
 
 var SpatialHash = require("./spatial_hash.js");
 var createRenderer = require("./renderer.js");
@@ -12,7 +12,12 @@ var toPixel = require("./renderer.js").toPixel;
 var createLevelData = require("./level_data.js");
 
 var createCapsule = require("./data_types.js").Capsule;
+var capsuleImplicit = require("./data_types.js").capsuleImplicit;
+
+
 var createEmitter = require("./data_types.js").Emitter;
+var emitterImplicit =  require("./data_types.js").emitterImplicit;
+
 
 function Particle(position, velocity, color) {
 
@@ -80,6 +85,7 @@ function Simulation(gl) {
     this.collisionBodies.push(new createCapsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, CAPSULE_COLOR));
 
     this.emitters.push(new createEmitter([-0.1, -0.15]));
+
 
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
 
@@ -435,7 +441,7 @@ Simulation.prototype.removeCapsule = function (mousePos) {
 
         var body = this.collisionBodies[iBody];
 
-        var Fx = body.eval(mMousePos);
+        var Fx = capsuleImplicit(body, mMousePos);
 
         if (Fx <= 0) {
             this.collisionBodies.splice(iBody, 1);
@@ -476,7 +482,7 @@ Simulation.prototype.findEmitter = function (mousePos) {
 
     for (var i = 0; i < this.emitters.length; ++i) {
         var emitter = this.emitters[i];
-        var Fx = emitter.eval([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]);
+        var Fx = emitterImplicit(emitter, [mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]);
         if (Fx <= 0) {
             return i;
         }
