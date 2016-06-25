@@ -34,6 +34,8 @@ var editEmitter = null; // the emitter being edited.
 
 var capsuleRadius = {val: 0.05}; // capsule radius of capsules that we add.
 
+var isRunningSimulation = {val: true}; // capsule radius of capsules that we add.
+
 var importMessage = "No Message";
 
 // ammount of seconds between the update steps of the water simulation.
@@ -72,17 +74,19 @@ var firstTime = true;
 shell.on("tick", function () {
     var canvas = shell.canvas;
 
-/*
-    if(firstTime) {
-        for(var i = 0; i < 1000; ++i) {
-            water.update(canvas.width, canvas.height, shell.mouse, updateRate);
-        }
-        firstTime = false;
 
-    }
-    */
+        /*
+         if(firstTime) {
+         for(var i = 0; i < 1000; ++i) {
+         water.update(canvas.width, canvas.height, shell.mouse, updateRate);
+         }
+         firstTime = false;
 
-    water.update(canvas.width, canvas.height, shell.mouse, updateRate);
+         }
+         */
+
+        water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
+    
 });
 
 shell.on("gl-render", function (t) {
@@ -150,9 +154,13 @@ shell.on("gl-render", function (t) {
     if (gui.button("Reset Particles")) {
         water.reset();
     }
+    gui.checkbox("Run simulation", isRunningSimulation);
 
+    
     gui.checkbox("Limit Particle Count", water.isLimitParticles);
 
+    
+    
     if (water.isLimitParticles.val) {
         gui.sliderInt("Max Particles", water.maxParticles, 0, 10000);
     }

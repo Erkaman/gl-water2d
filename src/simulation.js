@@ -106,16 +106,23 @@ Simulation.prototype.import = function(json) {
     return true;
 }
 
-Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
+Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta, isRunningSimulation) {
 
     if (this.newCapsule != null) {
         // when adding a new capsule, make p1 of the capsule follow the mouse.
         this.newCapsule.p1 = this.mapMousePos(mousePos);
     }
+    
+    
 
     this.renderer.update(canvasWidth, canvasHeight);
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
+    
+    if(!isRunningSimulation) {
+        // if not running simulation, do nothing beyond this point.
+        return;
+    }
 
     /*
     Below, we implement the water simulation. It is based on the paper
