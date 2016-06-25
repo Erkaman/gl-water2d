@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Smoothed Particle Hydrodynamic in WebGL",
   "scripts": {
-    "start": "budo --verbose example/index1.js -t glslify --live --open",
+    "start": "budo --verbose src/index.js -t glslify --live --open",
     "test": "standard"
   },
   "keywords": [],

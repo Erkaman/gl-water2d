@@ -5,7 +5,7 @@ var createBuffer = require('gl-buffer');
 var createShader = require("gl-shader");
 var mat4 = require("gl-mat4");
 
-var particleImage = require("./part.js");
+var particleImage = require("../rsc/part.js");
 
 var dt = require("./data_types.js");
 var consts = require("./consts.js");

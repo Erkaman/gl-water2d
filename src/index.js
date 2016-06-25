@@ -6,7 +6,7 @@ var createGui = require("pnp-gui");
 var mat4 = require("gl-mat4");
 var vec3 = require("gl-vec3");
 
-var createWater = require("../simulation.js");
+var createWater = require("./simulation.js");
 var saveAs = require('filesaver.js').saveAs;
 
 
