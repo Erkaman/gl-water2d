@@ -31,8 +31,6 @@ var WORLD_SCALE = consts.WORLD_SCALE;
 
 var h = consts.h;
 
-
-
 function Particle(position, velocity, color) {
 
     this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
@@ -49,9 +47,6 @@ function Particle(position, velocity, color) {
     this.isNew = true;
 }
 
-
-
-
 /*
  Constructor
  */
@@ -66,19 +61,6 @@ function Simulation(gl) {
     // used when we are adding a new capsule in the GUI.
     this.newCapsule = null;
 
-    this.collisionBodies = [];
-
-    // frame
-    const CAPSULE_RADIUS = 0.03;
-    const FRAME_RADIUS = 0.06;
-    const CAPSULE_COLOR = this.levelData.capsuleColor;
-    this.collisionBodies.push(new createCapsule(WORLD_MIN, [WORLD_MAX[0], WORLD_MIN[1]], FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new createCapsule([WORLD_MIN[0] * 0.7, WORLD_MAX[1]], [WORLD_MAX[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new createCapsule(WORLD_MIN, [WORLD_MIN[0], WORLD_MAX[1]], FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new createCapsule([WORLD_MAX[0], WORLD_MIN[1]], WORLD_MAX, FRAME_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new createCapsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new createCapsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, CAPSULE_COLOR));
-    this.collisionBodies.push(new createCapsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, CAPSULE_COLOR));
 
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
 
@@ -328,9 +310,9 @@ Simulation.prototype.handleCollision = function(iParticle) {
     // "Lagrangian Fluid Dynamics Using Smoothed Particle Hydrodynamics"
     // http://image.diku.dk/projects/media/kelager.06.pdf#page=33
 
-    for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
+    for (var iBody = 0; iBody < this.levelData.collisionBodies.length; ++iBody) {
 
-        var body = this.collisionBodies[iBody];
+        var body = this.levelData.collisionBodies[iBody];
 
         var x = iParticle.position;
         var scratch = vec2.create();
@@ -404,7 +386,7 @@ Simulation.prototype.doubleDensityRelaxation = function (delta) {
 }
 
 Simulation.prototype.draw = function (gl) {
-    this.renderer.draw(gl, this.collisionBodies, this.particles, this.newCapsule, this.levelData.emitters);
+    this.renderer.draw(gl, this.levelData.collisionBodies, this.particles, this.newCapsule, this.levelData.emitters);
 }
 
 Simulation.prototype.mapMousePos = function (mousePos) {
@@ -435,14 +417,14 @@ Simulation.prototype.getMaxPos = function () {
 Simulation.prototype.removeCapsule = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
 
-    for (var iBody = 0; iBody < this.collisionBodies.length; ++iBody) {
+    for (var iBody = 0; iBody < this.levelData.collisionBodies.length; ++iBody) {
 
-        var body = this.collisionBodies[iBody];
+        var body = this.levelData.collisionBodies[iBody];
 
         var Fx = capsuleImplicit(body, mMousePos);
 
         if (Fx <= 0) {
-            this.collisionBodies.splice(iBody, 1);
+            this.levelData.collisionBodies.splice(iBody, 1);
             --iBody;
         }
     }
@@ -456,7 +438,7 @@ Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
     if (this.newCapsule != null) {
         // add the capsule.
-        this.collisionBodies.push(this.newCapsule);
+        this.levelData.collisionBodies.push(this.newCapsule);
         this.newCapsule = null;
     } else {
         // make new capsule.
