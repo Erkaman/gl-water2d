@@ -17,6 +17,22 @@ var capsuleImplicit = require("./data_types.js").capsuleImplicit;
 var createEmitter = require("./data_types.js").Emitter;
 var emitterImplicit =  require("./data_types.js").emitterImplicit;
 
+var consts =  require("./consts.js");
+
+var particleRadius = consts.particleRadius;
+
+var WORLD_MIN = consts.WORLD_MIN;
+var WORLD_MAX = consts.WORLD_MAX;
+
+var SCALED_WORLD_MIN = consts.SCALED_WORLD_MIN;
+var SCALED_WORLD_MAX = consts.SCALED_WORLD_MAX;
+
+var WORLD_SCALE = consts.WORLD_SCALE;
+
+var h = consts.h;
+
+
+
 function Particle(position, velocity, color) {
 
     this.position = vec2.fromValues(position[0] * WORLD_SCALE, position[1] * WORLD_SCALE);
@@ -35,18 +51,6 @@ function Particle(position, velocity, color) {
 
 
 
-// this is the min and max points of the simulation world.
-var WORLD_MIN = [-0.6, -0.6];
-var WORLD_MAX = [+0.6, +0.9];
-
-// however, we scale the entire simulation world by WORLD_SCALE, in order to make
-// sure that it doesn't run too fast.
-var WORLD_SCALE = consts.WORLD_SCALE;
-var SCALED_WORLD_MIN = [WORLD_MIN[0] * WORLD_SCALE, WORLD_MIN[1] * WORLD_SCALE];
-var SCALED_WORLD_MAX = [WORLD_MAX[0] * WORLD_SCALE, WORLD_MAX[1] * WORLD_SCALE];
-
-var particleRadius = 0.015 * WORLD_SCALE;
-var h = particleRadius; // support radius
 
 /*
  Constructor
