@@ -2,6 +2,10 @@
  * Created by eric on 24/06/16.
  */
 
+
+var createEmitter = require("./data_types.js").Emitter;
+
+
 function LevelData() {
 
     // how much of its original velocity that a particle gets to keep when it bounces against a capsule.
@@ -17,6 +21,10 @@ function LevelData() {
     this.restDensity = {val: 10.0};
     this.stiffness = {val: 0.009};
     this.nearStiffness = {val: 1.2};
+    
+    this.emitters = [];
+    this.emitters.push(new createEmitter([-0.1, -0.15]));
+
 
 }
 

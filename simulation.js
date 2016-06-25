@@ -14,10 +14,8 @@ var createLevelData = require("./level_data.js");
 var createCapsule = require("./data_types.js").Capsule;
 var capsuleImplicit = require("./data_types.js").capsuleImplicit;
 
-
 var createEmitter = require("./data_types.js").Emitter;
 var emitterImplicit =  require("./data_types.js").emitterImplicit;
-
 
 function Particle(position, velocity, color) {
 
@@ -61,17 +59,11 @@ function Simulation(gl) {
 
     this.levelData = new createLevelData();
 
-    var json = JSON.stringify( this.levelData );
-    console.log("json ", json);
-
-    this.levelData = JSON.parse(json);
-
     // used when we are adding a new capsule in the GUI.
     this.newCapsule = null;
 
     this.collisionBodies = [];
-    this.emitters = [];
-    
+
     // frame
     const CAPSULE_RADIUS = 0.03;
     const FRAME_RADIUS = 0.06;
@@ -84,13 +76,15 @@ function Simulation(gl) {
     this.collisionBodies.push(new createCapsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new createCapsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, CAPSULE_COLOR));
 
-    this.emitters.push(new createEmitter([-0.1, -0.15]));
-
-
     this.hash = new SpatialHash(h, SCALED_WORLD_MIN, SCALED_WORLD_MAX);
 
     this.isLimitParticles = {val: true};
     this.maxParticles = {val: 1500};
+    
+    var json = JSON.stringify( this.levelData );
+    console.log("json ", json);
+    this.levelData = JSON.parse(json);
+
 }
 
 
@@ -272,8 +266,8 @@ Simulation.prototype.removeOutOfBoundsParticles = function() {
 
 Simulation.prototype.emitParticles = function(delta) {
 
-    for (var i = 0; i < this.emitters.length; ++i) {
-        var emitter = this.emitters[i];
+    for (var i = 0; i < this.levelData.emitters.length; ++i) {
+        var emitter = this.levelData.emitters[i];
 
         emitter.timer += delta;
 
@@ -406,7 +400,7 @@ Simulation.prototype.doubleDensityRelaxation = function (delta) {
 }
 
 Simulation.prototype.draw = function (gl) {
-    this.renderer.draw(gl, this.collisionBodies, this.particles, this.newCapsule, this.emitters);
+    this.renderer.draw(gl, this.collisionBodies, this.particles, this.newCapsule, this.levelData.emitters);
 }
 
 Simulation.prototype.mapMousePos = function (mousePos) {
@@ -472,7 +466,7 @@ Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
 Simulation.prototype.addEmitter = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
-    this.emitters.push(new createEmitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]));
+    this.levelData.emitters.push(new createEmitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]));
 }
 
 // return index of emitter under the cursor.
@@ -480,8 +474,8 @@ Simulation.prototype.findEmitter = function (mousePos) {
 
     var mMousePos = this.mapMousePos(mousePos);
 
-    for (var i = 0; i < this.emitters.length; ++i) {
-        var emitter = this.emitters[i];
+    for (var i = 0; i < this.levelData.emitters.length; ++i) {
+        var emitter = this.levelData.emitters[i];
         var Fx = emitterImplicit(emitter, [mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]);
         if (Fx <= 0) {
             return i;
@@ -495,14 +489,14 @@ Simulation.prototype.findEmitter = function (mousePos) {
 Simulation.prototype.removeEmitter = function (mousePos) {
     var i = this.findEmitter(mousePos);
     if (i != -1) {
-        this.emitters.splice(i, 1);
+        this.levelData.emitters.splice(i, 1);
     }
 }
 
 Simulation.prototype.selectEmitter = function (mousePos) {
     var i = this.findEmitter(mousePos);
     if (i != -1) {
-        return this.emitters[i]
+        return this.levelData.emitters[i]
     } else {
         return null;
     }
