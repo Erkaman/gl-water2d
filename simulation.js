@@ -85,6 +85,30 @@ Simulation.prototype.reset = function () {
     this.particles = [];
 }
 
+Simulation.prototype.export = function() {
+    return JSON.stringify( this.levelData );
+}
+
+
+// return false if the import failed. True otherwise. 
+Simulation.prototype.import = function(json) {
+    
+    var obj = null;
+
+    try {
+        obj = JSON.parse( json );
+
+        
+    }
+    catch(err) {
+        console.log(err.message);
+        return false;
+    }
+    
+    this.levelData = obj;
+    return true;
+}
+
 Simulation.prototype.update = function (canvasWidth, canvasHeight, mousePos, delta) {
 
     if (this.newCapsule != null) {

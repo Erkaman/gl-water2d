@@ -7,6 +7,7 @@ var mat4 = require("gl-mat4");
 var vec3 = require("gl-vec3");
 
 var createWater = require("../simulation.js");
+var saveAs = require('filesaver.js').saveAs;
 
 
 var mouseLeftDownPrev = false;
@@ -31,6 +32,20 @@ var editEmitter = null; // the emitter being edited.
 var capsuleRadius = {val: 0.05};
 
 var myfs;
+
+var importMessage = "No Message";
+
+function hash(text) {
+
+    var h = 5381;
+    var index = text.length;
+
+    while (index) {
+        h = (h * 33) ^ text.charCodeAt(--index);
+    }
+
+    return h >>> 0;
+}
 
 shell.on("gl-init", function () {
     var gl = shell.gl;
@@ -284,9 +299,35 @@ shell.on("gl-render", function (t) {
         }, function (e) {
             console.log('Storage error', e);
         });
-
-
     }
+
+
+    if (gui.button("Export")) {
+
+        var json = water.export();
+
+        var blob = new Blob([json], {type: "text/plain;charset=utf-8"});
+
+        // use json text to generate hash. This hash then idenitifies the level.
+        var h = hash(json);
+        var filename = "level" + h + ".json";
+
+        saveAs(blob, filename);
+    }
+
+    if (gui.button("Import")) {
+        var json = prompt("Please paste exported json below");
+
+        if (json != null) {
+            if(water.import(json)) {
+                importMessage = "Import Succeeded!";
+            } else {
+                importMessage = "Import Failed!";
+            }
+        }
+    }
+
+    gui.textLine(importMessage);
 
 
     gui.end(gl, canvas.width, canvas.height);

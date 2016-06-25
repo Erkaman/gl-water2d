@@ -34,12 +34,10 @@ function LevelData() {
     this.nearStiffness = {val: 1.2};
 
     this.emitters = [];
-    this.emitters.push(new createEmitter([-0.1, -0.15]));
-
-
     this.collisionBodies = [];
 
-    // frame
+    // below, we create the default level. 
+    
     const CAPSULE_RADIUS = 0.03;
     const FRAME_RADIUS = 0.06;
     const CAPSULE_COLOR = this.capsuleColor;
@@ -50,6 +48,8 @@ function LevelData() {
     this.collisionBodies.push(new createCapsule([0.1, 0.8], [0.3, 0.5], CAPSULE_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new createCapsule([0.6, 0.0], [0.3, 0.3], CAPSULE_RADIUS, CAPSULE_COLOR));
     this.collisionBodies.push(new createCapsule([-0.5, -0.3], [0.2, 0.4], CAPSULE_RADIUS, CAPSULE_COLOR));
+
+    this.emitters.push(new createEmitter([-0.1, -0.15]));
 }
 
 module.exports = LevelData;
