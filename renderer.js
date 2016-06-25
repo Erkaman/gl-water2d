@@ -114,7 +114,9 @@ Mesh.prototype._addUv = function (uv) {
  Add vertex that only has one color, and does not use a texture.
  */
 Mesh.prototype._coloredVertex = function (position, color) {
-    // at this uv-coordinate, the font atlas is entirely white.
+    // the fragment shader will check whether the uv-coordinate is equal to this below value.
+    // if it is, then it does not use the  particle texture at all, and instead uses the color
+    // attribute to set the color.
     var whiteUv = [2.0, 2.0];
 
     this._addPosition(position);
