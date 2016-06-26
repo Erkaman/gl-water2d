@@ -3,10 +3,10 @@ import os
 import os.path
 import shutil
 
-in_path = "/Users/eric/Library/Application Support/Google/Chrome/Default/File System/000/p/00/"
-out_path = "/Users/WebstormProjects/gl-water2d/frames/"
+in_path = "/Users/eric/Library/Application Support/Google/Chrome/Default/File System/000/p/my"
+out_path = "/Users/WebstormProjects/gl-water2d/frames5/"
 
-start_file = "00000019"
+start_file = "00000471"
 
 in_file_num = int(start_file)
 out_frame_num = 0
@@ -23,7 +23,7 @@ while True:
     out_file = "frame" + str(out_frame_num).rjust(8,'0') + ".tga"
     out_full_path = os.path.join(out_path, out_file)
 
-    print "copy ", file_num_str, " to ", out_full_path
+    print "copy ", in_file_num_str, " to ", out_full_path
 
     shutil.copyfile(in_full_path, out_full_path )
 
