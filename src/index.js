@@ -43,6 +43,8 @@ var recordingMessage = "Not recording";
 // ammount of seconds between the update steps of the water simulation.
 const updateRate = 0.02;
 
+var isRecording = {val: false};
+
 
 function hash(text) {
 
@@ -56,15 +58,16 @@ function hash(text) {
     return h >>> 0;
 }
 
-var isRecording = false;
 
 function startRecord(gl, canvas) {
     water.reset();
+    isRunningSimulation.val =  true;
 
-    isRecording = true;
+
+    isRecording.val = true;
     myfs = null;
     // Request 1MB
-    var bytes = 1024*1024*1024*1; // 1GB should be good enough
+    var bytes = 1024*1024*1024*30; // 30GB should be good enough
     window.webkitStorageInfo.requestQuota(PERSISTENT, bytes, function (grantedBytes) {
         console.log('Got storage', grantedBytes);
         window.webkitRequestFileSystem(PERSISTENT, grantedBytes, function (fs) {
@@ -151,13 +154,13 @@ function startRecord(gl, canvas) {
 
                        // console.log('Writing file', frames, blob.size);
 
-                        if(totalTime < recordingTime.val) {
+                        if(totalTime < recordingTime.val && isRecording.val) {
                             create_random_file();
                             recordingMessage = "Recording: " +  totalTime.toFixed(1) + "/" + recordingTime.val;
                         }else {
                             console.log("DONE RECORDING");
                             recordingMessage = "Done recording";
-                            isRecording = false;
+                            isRecording.val = false;
                         }
 
                     });
@@ -210,7 +213,7 @@ shell.on("tick", function () {
          }
          */
 
-    if(!isRecording)
+    if(!isRecording.val)
         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
 
 
@@ -310,11 +313,16 @@ shell.on("gl-render", function (t) {
     gui.separator();
 
     if (gui.button("Record")) {
-
         startRecord(gl, canvas);
     }
 
-    gui.sliderInt("Recording Time", recordingTime, 1, 60);
+    if(isRecording.val) {
+        if(gui.button("Stop recording")) {
+            isRecording.val = false;
+        }
+    }
+
+    gui.sliderInt("Recording Time", recordingTime, 1, 180);
 
     gui.textLine(recordingMessage);
 
