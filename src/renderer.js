@@ -178,11 +178,13 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
         var p = emitter.position;
         var r = emitter.radius;
 
-        // if not recording, draw the emitter being edited in a special color.
-        if(emitter == editEmitter && !isRecording)
-            this._circle(this.meshOther, p, r, [0.0, 1.0, 0.0], CIRCLE_SEGMENTS);
-        else
-            this._circle(this.meshOther, p, r, [1.0, 0.0, 0.0], CIRCLE_SEGMENTS);
+        // if we are recording, do not render the emitters at all. they look ugly. 
+        if(!isRecording) {
+            if (emitter == editEmitter)
+                this._circle(this.meshOther, p, r, [0.0, 1.0, 0.0], CIRCLE_SEGMENTS);
+            else
+                this._circle(this.meshOther, p, r, [1.0, 0.0, 0.0], CIRCLE_SEGMENTS);
+        }
     }
 
 

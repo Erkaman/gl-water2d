@@ -102,7 +102,11 @@ function startRecord(gl, canvas) {
 
                         totalTime += updateRate;
                         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
-                        water.draw(gl);
+
+                        water.draw(gl, editEmitter, isRecording.val);
+
+
+
                         gl.flush();
                         gl.finish();
 
