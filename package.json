@@ -12,6 +12,7 @@
   "devDependencies": {
     "clamp": "^1.0.1",
     "filesaver.js": "^0.2.0",
+    "gl-buffer": "^2.1.2",
     "gl-mat4": "^1.1.4",
     "gl-now": "^1.4.0",
     "gl-shader": "^4.2.0",
