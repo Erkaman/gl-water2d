@@ -297,7 +297,8 @@ Simulation.prototype.emitParticles = function(delta) {
 
         emitter.timer += delta;
 
-        if (emitter.timer > emitter.frequency.val &&
+        var period =  (1.0 / emitter.frequency.val);
+        if (emitter.timer > period &&
             (!this.isLimitParticles.val || (this.particles.length < this.maxParticles.val))) {
 
             var c = [emitter.color[0], emitter.color[1], emitter.color[2]];

@@ -276,7 +276,7 @@ shell.on("gl-render", function (t) {
             gui.textLine("Editing");
 
             gui.draggerRgb("Color", editEmitter.color);
-            gui.sliderFloat("Frequency", editEmitter.frequency, 0.01, 0.3);
+            gui.sliderFloat("Frequency", editEmitter.frequency, 0.0, 40.0);
             gui.sliderInt("Angle", editEmitter.baseAngle, 0, 360);
             gui.sliderInt("Angle Velocity", editEmitter.angleVelocity, 0, 80);
 

@@ -30,7 +30,7 @@ function LevelData() {
 
     // see the paper for definitions of these.
     this.restDensity = {val: 10.0};
-    this.stiffness = {val: 0.009};
+    this.stiffness = {val: 0.01};
     this.nearStiffness = {val: 1.2};
 
     this.emitters = [];

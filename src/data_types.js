@@ -49,7 +49,7 @@ var capsuleImplicit = function (capsule, x) {
  */
 function Emitter(position, frequency) {
     this.position = position;
-    this.frequency = {val: 0.05};
+    this.frequency = {val: 20.0};
     this.timer = 0.0;
     this.radius = 0.015;
     this.color = [0.0, 0.0, 1.0];
