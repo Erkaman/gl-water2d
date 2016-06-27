@@ -5,8 +5,8 @@ import shutil
 import subprocess
 
 
-in_path = "/Users/eric/Library/Application Support/Google/Chrome/Default/File System/017/p/"
-out_path = "/Users/WebstormProjects/gl-water2d/frames13/"
+in_path = "/Users/eric/Library/Application Support/Google/Chrome/Default/File System/027/p/"
+out_path = "/Users/WebstormProjects/gl-water2d/obstacles_frames/"
 
 in_file_num = 0
 out_frame_num = 0

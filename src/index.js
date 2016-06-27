@@ -195,8 +195,9 @@ shell.on("gl-init", function () {
     gl.cullFace(gl.BACK);
 
     gui = new createGui(gl);
-    gui.windowSizes = [340, 580];
+    gui.windowSizes = [340, 590];
     gui.windowAlpha = 1.0;
+    gui.widgetSpacing = 9;  // decrease spacing. 
 
     water = new createWater(gl);
 
@@ -358,11 +359,12 @@ shell.on("gl-render", function (t) {
         if(gui.button("Stop recording")) {
             isRecording.val = false;
         }
+    } else {
+        if (gui.button("Record")) {
+            startRecord(gl, canvas);
+        }
     }
-
-    if (gui.button("Record")) {
-        startRecord(gl, canvas);
-    }
+    
     gui.sameLine();
     gui.textLine(recordingMessage);
 
