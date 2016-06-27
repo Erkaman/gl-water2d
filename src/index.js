@@ -31,7 +31,7 @@ var editMode = {val: EM_ADD_CAPSULE};
 
 var editEmitter = null; // the emitter being edited.
 
-var capsuleRadius = {val: 0.05}; // capsule radius of capsules that we add.
+var capsuleRadius = {val: 0.5}; // capsule radius of capsules that we add.
 var recordingTime = {val: 5}; // capsule radius of capsules that we add.
 
 var isRunningSimulation = {val: true}; // capsule radius of capsules that we add.
@@ -267,7 +267,7 @@ shell.on("gl-render", function (t) {
 
     if (editMode.val == EM_ADD_CAPSULE) {
         gui.textLine("Right click to cancel");
-        gui.sliderFloat("Capsule Radius", capsuleRadius, 0.02, 0.06);
+        gui.sliderFloat("Capsule Radius", capsuleRadius, 0.2, 0.6);
     } else if (editMode.val == EM_EDIT_EMITTER) {
 
         if (editEmitter == null) {
@@ -382,7 +382,7 @@ shell.on("tick", function () {
             water.remove(shell.mouse);
             editEmitter = null;
         } else if (editMode.val == EM_ADD_CAPSULE) {
-            water.addCapsule(shell.mouse, capsuleRadius.val);
+            water.addCapsule(shell.mouse, capsuleRadius.val*0.1);
         } else if (editMode.val == EM_ADD_EMITTER) {
             water.addEmitter(shell.mouse);
         } else if (editMode.val == EM_EDIT_EMITTER) {
