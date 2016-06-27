@@ -24,14 +24,16 @@ function LevelData() {
 
     this.sigma = {val: 0.9};
     this.beta =  {val: 0.3};
-    this.capsuleColor = [0, 0.5, 0];
-
     this.gravity = {val: +0.03}; // gravity force.
-
     // see the paper for definitions of these.
     this.restDensity = {val: 10.0};
     this.stiffness = {val: 0.01};
     this.nearStiffness = {val: 1.2};
+
+
+    this.capsuleColor = [0, 0.5, 0];
+
+
 
     this.emitters = [];
     this.collisionBodies = [];

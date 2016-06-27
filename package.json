@@ -22,7 +22,7 @@
     "gl-vec3": "^1.0.3",
     "glslify": "^5.0.2",
     "ndpack-image": "^2.0.0",
-    "pnp-gui": "0.0.3",
+    "pnp-gui": "0.0.4",
     "sieve": "0.0.4"
   },
   "dependencies": {},

@@ -539,6 +539,10 @@ Simulation.prototype.cancelAddCapsule = function () {
     this.newCapsule = null;
 }
 
+Simulation.prototype.getLevelData = function() {
+    return this.levelData;
+}
+
 module.exports = Simulation;
 
 /*

@@ -21,6 +21,11 @@ the water simulation.
  */
 var water;
 
+const GM_LEVEL = 10;
+const GM_LIQUID = 11;
+
+var globalMode = {val: GM_LEVEL};
+
 
 // edit modes. Used by GUI
 const EM_REMOVE = 0;
@@ -236,6 +241,7 @@ shell.on("gl-render", function (t) {
     var canvas = shell.canvas;
 
     water.draw(gl, editEmitter, isRecording.val);
+    var levelData = water.getLevelData();
 
     /*
     Gather information needed by the GUI
@@ -256,40 +262,72 @@ shell.on("gl-render", function (t) {
 
     gui.begin(io, "Editor");
 
-    gui.textLine("Edit Mode");
 
-    gui.radioButton("Remove Capsule/Emitter", editMode, EM_REMOVE);
-    gui.sameLine();
-    gui.radioButton("Add Capsule", editMode, EM_ADD_CAPSULE);
-    gui.radioButton("Add Emitter", editMode, EM_ADD_EMITTER);
-    gui.sameLine();
-    gui.radioButton("Edit Emitter", editMode, EM_EDIT_EMITTER);
+    gui.textLine("Global Edit Mode");
 
+    gui.radioButton("Edit Level", globalMode, GM_LEVEL);
+    gui.sameLine();
+    gui.radioButton("Edit Liquid", globalMode, GM_LIQUID);
     gui.separator();
 
-    gui.textLine("Edit Mode Settings");
+    if(globalMode.val == GM_LEVEL) {
 
-    if (editMode.val == EM_ADD_CAPSULE) {
-        gui.textLine("Right click to cancel");
-        gui.sliderFloat("Capsule Radius", capsuleRadius, 0.2, 0.6);
-    } else if (editMode.val == EM_EDIT_EMITTER) {
+        gui.textLine("Edit Level Mode");
 
-        if (editEmitter == null) {
-            gui.textLine("Please select an emitter");
-        } else {
-            gui.textLine("Editing");
+        gui.radioButton("Remove Capsule/Emitter", editMode, EM_REMOVE);
+        gui.sameLine();
+        gui.radioButton("Add Capsule", editMode, EM_ADD_CAPSULE);
+        gui.radioButton("Add Emitter", editMode, EM_ADD_EMITTER);
+        gui.sameLine();
+        gui.radioButton("Edit Emitter", editMode, EM_EDIT_EMITTER);
 
-            gui.draggerRgb("Color", editEmitter.color);
-            gui.sliderFloat("Frequency", editEmitter.frequency, 0.0, 40.0);
-            gui.sliderInt("Angle", editEmitter.baseAngle, 0, 360);
-            gui.sliderInt("Angle Velocity", editEmitter.angleVelocity, 0, 80);
+        gui.separator();
 
-            gui.sliderFloat("Strength", editEmitter.strength, 1, 15);
+        gui.textLine("Edit Mode Settings");
 
-            gui.sliderInt("Velocity Randomness", editEmitter.velRand, 0, 30);
+        if (editMode.val == EM_ADD_CAPSULE) {
+            gui.textLine("Right click to cancel");
+            gui.sliderFloat("Capsule Radius", capsuleRadius, 0.2, 0.6);
+        } else if (editMode.val == EM_EDIT_EMITTER) {
+
+            if (editEmitter == null) {
+                gui.textLine("Please select an emitter");
+            } else {
+                gui.textLine("Editing");
+
+                gui.draggerRgb("Color", editEmitter.color);
+                gui.sliderFloat("Frequency", editEmitter.frequency, 0.0, 40.0);
+                gui.sliderInt("Angle", editEmitter.baseAngle, 0, 360);
+                gui.sliderInt("Angle Velocity", editEmitter.angleVelocity, 0, 80);
+
+                gui.sliderFloat("Strength", editEmitter.strength, 1, 15);
+
+                gui.sliderInt("Velocity Randomness", editEmitter.velRand, 0, 30);
+            }
+
         }
+    } else {
 
+        gui.textLine("Edit Liquid Mode");
+
+        gui.sliderFloat("Sigma(Viscosity)", levelData.sigma, 0.0, 1.0);
+        gui.sliderFloat("Beta(Viscosity)", levelData.beta, 0.0, 1.0);
+        gui.sliderFloat("Gravity", levelData.gravity, 0.001, 0.1, 3);
+        gui.sliderFloat("Rest Density", levelData.restDensity, 1.0, 30.0);
+        gui.sliderFloat("Stiffness", levelData.stiffness, 0.0001, 0.03, 4 );
+        gui.sliderFloat("Near Stiffness", levelData.nearStiffness, 0.00, 3.0);
+
+        /*
+         this.gravity = {val: +0.03}; // gravity force.
+         // see the paper for definitions of these.
+         this.restDensity = {val: 10.0};
+         this.stiffness = {val: 0.01};
+         this.nearStiffness = {val: 1.2};
+
+         */
     }
+
+
 
     gui.separator();
 
@@ -372,12 +410,18 @@ var rightClicked = false;
 shell.on("tick", function () {
     var gl = shell.gl
 
+
+    if(shell.wasDown("P")) {
+        water.reset();
+    }
+
     // if interacting with the GUI, do not let the mouse control the simulation.
     if (gui.hasMouseFocus())
         return;
 
     var leftDown = shell.wasDown("mouse-left");
     var rightDown = shell.wasDown("mouse-right");
+
 
     if (!leftClicked && leftDown == true) {
 
