@@ -49,6 +49,7 @@ function Particle(position, velocity, color) {
  */
 function Simulation(gl) {
 
+
     this.particles = [];
 
     this.renderer = new createRenderer(gl);
@@ -602,4 +603,7 @@ module.exports = Simulation;
  masters thesis:
  http://image.diku.dk/projects/media/kelager.06.pdf
 
+optimization hints:
+// https://twiki.graphics.ethz.ch/pub/GameClass/Team1_2014/GPL-InterimReport.pdf
+// 
  */

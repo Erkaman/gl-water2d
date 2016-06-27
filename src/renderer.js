@@ -221,17 +221,22 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
     gl.disable(gl.DEPTH_TEST) // no depth testing; we handle this by manually placing out
     // geometry in the order we wish them to be rendered.
     
-    // for rendering everything but the particle, we don't want any alpha blending.
-    // so in the first pass, render everything but particles.
-    gl.disable(gl.BLEND)
-    this.meshOther.updateBuffers(gl, this.shader);
-    this.meshOther.draw(gl);
 
-    // now render particles with alpha blending.
+    // render particles with alpha blending.
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.ONE, gl.ONE)
     this.meshParticles.updateBuffers(gl, this.shader);
     this.meshParticles.draw(gl);
+
+
+    // for rendering everything but the particle, we don't want any alpha blending.
+    // so in the second pass, render everything but particles.
+    // also, it is important that we render this stuff after the particles.
+    // we can hide lots of visual bugs by doing this. 
+    gl.disable(gl.BLEND)
+    this.meshOther.updateBuffers(gl, this.shader);
+    this.meshOther.draw(gl);
+
 };
 
 
