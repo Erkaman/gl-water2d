@@ -316,7 +316,7 @@ Simulation.prototype.emitParticles = function(delta) {
 
             emitter.angle.val += emitter.angleVelocity.val;
 
-            const strength = emitter.strength.val;
+            const strength = emitter.strength.val *0.001;
             const velocity = [strength * Math.cos(theta), strength * Math.sin(theta)];
 
             // find vector that is perpendicular to velocity.

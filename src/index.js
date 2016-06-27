@@ -280,7 +280,7 @@ shell.on("gl-render", function (t) {
             gui.sliderInt("Angle", editEmitter.baseAngle, 0, 360);
             gui.sliderInt("Angle Velocity", editEmitter.angleVelocity, 0, 80);
 
-            gui.sliderFloat("Strength", editEmitter.strength, 0.001, 0.02);
+            gui.sliderFloat("Strength", editEmitter.strength, 1, 15);
 
             gui.sliderInt("Velocity Randomness", editEmitter.velRand, 0, 30);
 

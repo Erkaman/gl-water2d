@@ -60,7 +60,7 @@ function Emitter(position, frequency) {
     this.angle = {val: 0};
 
 
-    this.strength = {val: 0.006};
+    this.strength = {val: 6};
     this.velRand = {val: 2};
 };
 
