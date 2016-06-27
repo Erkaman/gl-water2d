@@ -186,7 +186,7 @@ shell.on("gl-init", function () {
     gl.cullFace(gl.BACK);
 
     gui = new createGui(gl);
-    gui.windowSizes = [300, 530];
+    gui.windowSizes = [340, 580];
     gui.windowAlpha = 1.0;
 
     water = new createWater(gl);
@@ -255,8 +255,10 @@ shell.on("gl-render", function (t) {
     gui.textLine("Edit Mode");
 
     gui.radioButton("Remove Capsule/Emitter", editMode, EM_REMOVE);
+    gui.sameLine();
     gui.radioButton("Add Capsule", editMode, EM_ADD_CAPSULE);
     gui.radioButton("Add Emitter", editMode, EM_ADD_EMITTER);
+    gui.sameLine();
     gui.radioButton("Edit Emitter", editMode, EM_EDIT_EMITTER);
 
     gui.separator();
@@ -291,6 +293,7 @@ shell.on("gl-render", function (t) {
     if (gui.button("Reset Particles")) {
         water.reset();
     }
+    gui.sameLine();
     gui.checkbox("Run simulation", isRunningSimulation);
 
 
@@ -304,15 +307,11 @@ shell.on("gl-render", function (t) {
         gui.sliderInt("Max Particles", water.maxParticles, 0, 10000);
     }
 
-    water.isLimitParticles.val = false;
 
     gui.textLine("Particles: " +  water.getParticleCount() );
 
     gui.separator();
 
-    if (gui.button("Record")) {
-        startRecord(gl, canvas);
-    }
 
     if(isRecording.val) {
         if(gui.button("Stop recording")) {
@@ -320,9 +319,14 @@ shell.on("gl-render", function (t) {
         }
     }
 
+    if (gui.button("Record")) {
+        startRecord(gl, canvas);
+    }
+    gui.sameLine();
+    gui.textLine(recordingMessage);
+
     gui.sliderInt("Recording Time", recordingTime, 1, 180);
 
-    gui.textLine(recordingMessage);
 
     gui.separator();
 
