@@ -480,7 +480,9 @@ Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
 
 Simulation.prototype.addEmitter = function (mousePos) {
     var mMousePos = this.mapMousePos(mousePos);
-    this.levelData.emitters.push(new createEmitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]));
+    var newEmitter = new createEmitter([mMousePos[0] / WORLD_SCALE, mMousePos[1] / WORLD_SCALE]);
+    this.levelData.emitters.push(newEmitter);
+    return newEmitter
 }
 
 // return index of emitter under the cursor.

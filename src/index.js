@@ -283,7 +283,6 @@ shell.on("gl-render", function (t) {
             gui.sliderFloat("Strength", editEmitter.strength, 1, 15);
 
             gui.sliderInt("Velocity Randomness", editEmitter.velRand, 0, 30);
-
         }
 
     }
@@ -384,7 +383,8 @@ shell.on("tick", function () {
         } else if (editMode.val == EM_ADD_CAPSULE) {
             water.addCapsule(shell.mouse, capsuleRadius.val*0.1);
         } else if (editMode.val == EM_ADD_EMITTER) {
-            water.addEmitter(shell.mouse);
+            var newEmitter = water.addEmitter(shell.mouse);
+            editEmitter = newEmitter;
         } else if (editMode.val == EM_EDIT_EMITTER) {
             var e = water.selectEmitter(shell.mouse);
 
