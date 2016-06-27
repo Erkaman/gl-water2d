@@ -231,7 +231,7 @@ shell.on("gl-render", function (t) {
     var gl = shell.gl;
     var canvas = shell.canvas;
 
-    water.draw(gl);
+    water.draw(gl, editEmitter, isRecording.val);
 
     /*
     Gather information needed by the GUI

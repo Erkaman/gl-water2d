@@ -147,7 +147,7 @@ Renderer.prototype.update = function (canvasWidth, canvasHeight) {
     this.meshParticles.update(canvasWidth, canvasHeight);
 }
 
-Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, emitters) {
+Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, emitters, editEmitter, isRecording) {
 
     /*
      Create geometry.
@@ -164,6 +164,7 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
             [body.p0[0] / WORLD_SCALE, body.p0[1] / WORLD_SCALE],
             [body.p1[0] / WORLD_SCALE, body.p1[1] / WORLD_SCALE], body.radius / WORLD_SCALE, body.color, CAPSULE_SEGMENTS);
     }
+    // also draw the new capsule. 
     if (newCapsule != null) {
         this._capsule(
             this.meshOther,
@@ -177,7 +178,11 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
         var p = emitter.position;
         var r = emitter.radius;
 
-        this._circle(this.meshOther, p, r, [1.0, 0.0, 0.0], CIRCLE_SEGMENTS);
+        // if not recording, draw the emitter being edited in a special color.
+        if(emitter == editEmitter && !isRecording)
+            this._circle(this.meshOther, p, r, [0.0, 1.0, 0.0], CIRCLE_SEGMENTS);
+        else
+            this._circle(this.meshOther, p, r, [1.0, 0.0, 0.0], CIRCLE_SEGMENTS);
     }
 
 

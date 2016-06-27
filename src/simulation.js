@@ -430,8 +430,9 @@ Simulation.prototype.doubleDensityRelaxation = function (delta) {
 
 }
 
-Simulation.prototype.draw = function (gl) {
-    this.renderer.draw(gl, this.levelData.collisionBodies, this.particles, this.newCapsule, this.levelData.emitters);
+Simulation.prototype.draw = function (gl, editEmitter, isRecording) {
+    this.renderer.draw(gl, this.levelData.collisionBodies, this.particles, this.newCapsule, this.levelData.emitters,
+        editEmitter, isRecording);
 }
 
 Simulation.prototype.mapMousePos = function (mousePos) {
