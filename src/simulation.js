@@ -457,23 +457,6 @@ Simulation.prototype.getMaxPos = function () {
     return [x, y];
 }
 
-// remove capsule, if we are hovering over one.
-Simulation.prototype.removeCapsule = function (mousePos) {
-    var mMousePos = this.mapMousePos(mousePos);
-
-    for (var iBody = 0; iBody < this.levelData.collisionBodies.length; ++iBody) {
-
-        var body = this.levelData.collisionBodies[iBody];
-
-        var Fx = capsuleImplicit(body, mMousePos);
-
-        if (Fx <= 0) {
-            this.levelData.collisionBodies.splice(iBody, 1);
-            --iBody;
-        }
-    }
-}
-
 // in the first call of addCapsule, set p0 of capsule
 // in the second call, set p1
 Simulation.prototype.addCapsule = function (mousePos, capsuleRadius) {
@@ -516,10 +499,24 @@ Simulation.prototype.findEmitter = function (mousePos) {
 }
 
 
-Simulation.prototype.removeEmitter = function (mousePos) {
+Simulation.prototype.remove = function (mousePos) {
     var i = this.findEmitter(mousePos);
     if (i != -1) {
         this.levelData.emitters.splice(i, 1);
+        return;
+    }
+    
+    var mMousePos = this.mapMousePos(mousePos);
+    for (var iBody = 0; iBody < this.levelData.collisionBodies.length; ++iBody) {
+
+        var body = this.levelData.collisionBodies[iBody];
+
+        var Fx = capsuleImplicit(body, mMousePos);
+
+        if (Fx <= 0) {
+            this.levelData.collisionBodies.splice(iBody, 1);
+            return;
+        }
     }
 }
 
