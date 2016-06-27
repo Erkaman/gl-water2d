@@ -10,10 +10,8 @@
   "author": "Eric Arnebäck <arnebackeric@gmail.com> (https://github.com/Erkaman)",
   "license": "MIT",
   "devDependencies": {
-    "bmp-js": "0.0.1",
     "clamp": "^1.0.1",
     "filesaver.js": "^0.2.0",
-    "gl-geometry": "^3.1.0",
     "gl-mat4": "^1.1.4",
     "gl-now": "^1.4.0",
     "gl-shader": "^4.2.0",
@@ -22,8 +20,7 @@
     "gl-vec3": "^1.0.3",
     "glslify": "^5.0.2",
     "ndpack-image": "^2.0.0",
-    "pnp-gui": "0.0.4",
-    "sieve": "0.0.4"
+    "pnp-gui": "0.0.4"
   },
   "dependencies": {},
   "directories": {
