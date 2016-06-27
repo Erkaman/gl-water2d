@@ -26,9 +26,9 @@ function LevelData() {
     this.beta =  {val: 0.3};
     this.gravity = {val: +0.03}; // gravity force.
     // see the paper for definitions of these.
-    this.restDensity = {val: 10.0};
-    this.stiffness = {val: 0.01};
-    this.nearStiffness = {val: 1.2};
+    this.restDensity = {val: 6.4};
+    this.stiffness = {val: 0.0061};
+    this.nearStiffness = {val: 0.625};
 
 
     this.capsuleColor = [0, 0.5, 0];
