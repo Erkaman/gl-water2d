@@ -500,12 +500,14 @@ Simulation.prototype.findEmitter = function (mousePos) {
 
 
 Simulation.prototype.remove = function (mousePos) {
+    // first try and remove emitters.
     var i = this.findEmitter(mousePos);
     if (i != -1) {
         this.levelData.emitters.splice(i, 1);
         return;
     }
-    
+
+    // second, try and remove capsules.
     var mMousePos = this.mapMousePos(mousePos);
     for (var iBody = 0; iBody < this.levelData.collisionBodies.length; ++iBody) {
 
