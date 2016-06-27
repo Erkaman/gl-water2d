@@ -343,7 +343,7 @@ shell.on("gl-render", function (t) {
 
         saveAs(blob, filename);
     }
-
+    gui.sameLine();
     if (gui.button("Import")) {
         var json = prompt("Please paste exported json below");
 
