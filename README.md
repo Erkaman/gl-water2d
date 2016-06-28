@@ -77,7 +77,7 @@ or by using graphicsmagick
 
 but we aware that this will take quite a while!
 
-If want to record another simulation after recording a first one, **be sure the clear the cache before you do so!** To do this, go to [chrome://settings/cookies](chrome://settings/cookies) and delete the site data for the demo. If you do not do this, the numbering of the frames of the new simulation will not start from zero, and  `gather.py` will not handle this special case for you.
+If want to record another simulation after recording a first one, **be sure the clear the cache before you do so!** To do this, go to [chrome://settings/cookies](chrome://settings/cookies) and delete the site data for the demo. The entry you should delete is named something like `erkaman.github.io`. If you do not do this, the numbering of the frames of the new simulation will not start from zero, and  `gather.py` will not handle this special case for you.
 
 
 ## Build
