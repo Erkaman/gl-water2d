@@ -13,7 +13,7 @@ You can see some simulations made using this implementation below
 <td align="center"><img src="images/obstacles.gif" alt="Obstacles" width="268" height="336"></td>
 </tr>
 <tr>
-<td align="center"> <a href="json/obstacles.json">container.json</a> </td>
+<td align="center"> <a href="json/container.json">container.json</a> </td>
 <td align="center"> <a href="json/obstacles.json">obstacles.json</a> </td>
 </tr>
 
