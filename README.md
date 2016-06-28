@@ -1,4 +1,4 @@
-# 2D Smoothed Liquid Simulation in WebGL
+# 2D Liquid Simulation in WebGL
 
 This project is an implementation of 2D liquid simulation using  Smoothed Particle Hydrodynamics in WebGL.
 [Here is a demo](http://erkaman.github.io/gl-water2d/demo/ ). You can use the demo to place out emitters and capsules and create liquid simulations. 
