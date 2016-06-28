@@ -69,7 +69,6 @@ function startRecord(gl, canvas) {
     water.reset();
     isRunningSimulation.val =  true;
     isRecording.val = true;
-    // Request 1MB
     var bytes = 1024*1024*1024*30; // 30GB should be good enough
     window.webkitStorageInfo.requestQuota(PERSISTENT, bytes, function (grantedBytes) {
         console.log('Got storage', grantedBytes);
@@ -189,7 +188,7 @@ shell.on("gl-init", function () {
     gui = new createGui(gl);
     gui.windowSizes = [340, 590];
     gui.windowAlpha = 1.0;
-    gui.widgetSpacing = 9;  // decrease spacing. 
+    gui.widgetSpacing = 9;  // decrease GUI spacing.
 
     water = new createWater(gl);
 
@@ -198,35 +197,13 @@ shell.on("gl-init", function () {
 });
 
 
-var firstTime = true;
 
 shell.on("tick", function () {
     var canvas = shell.canvas;
 
 
-        /*
-         if(firstTime) {
-         for(var i = 0; i < 1000; ++i) {
-         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
-         }
-         firstTime = false;
-
-         }
-         */
-
-    if(!isRecording.val)
+    if(!isRecording.val) // if we are recording, we are already updating the simulation in recordFrame()
         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
-
-
-
-    if(firstTime) {
-
-
-        firstTime = false;
-
-    }
-
-
 });
 
 shell.on("gl-render", function (t) {
@@ -292,9 +269,7 @@ shell.on("gl-render", function (t) {
                 gui.sliderFloat("Frequency", editEmitter.frequency, 0.0, 40.0);
                 gui.sliderInt("Angle", editEmitter.baseAngle, 0, 360);
                 gui.sliderInt("Angle Velocity", editEmitter.angleVelocity, 0, 80);
-
                 gui.sliderFloat("Strength", editEmitter.strength, 1, 15);
-
                 gui.sliderInt("Velocity Randomness", editEmitter.velRand, 0, 30);
             }
 
@@ -309,18 +284,7 @@ shell.on("gl-render", function (t) {
         gui.sliderFloat("Rest Density", levelData.restDensity, 1.0, 30.0);
         gui.sliderFloat("Stiffness", levelData.stiffness, 0.0001, 0.03, 4 );
         gui.sliderFloat("Near Stiffness", levelData.nearStiffness, 0.00, 3.0);
-
-        /*
-         this.gravity = {val: +0.03}; // gravity force.
-         // see the paper for definitions of these.
-         this.restDensity = {val: 10.0};
-         this.stiffness = {val: 0.01};
-         this.nearStiffness = {val: 1.2};
-
-         */
     }
-
-
 
     gui.separator();
 
@@ -330,22 +294,15 @@ shell.on("gl-render", function (t) {
     gui.sameLine();
     gui.checkbox("Run simulation", isRunningSimulation);
 
-
     gui.checkbox("Limit Particle Count", water.isLimitParticles);
-
-
-
-    
 
     if (water.isLimitParticles.val) {
         gui.sliderInt("Max Particles", water.maxParticles, 0, 10000);
     }
 
-
     gui.textLine("Particles: " +  water.getParticleCount() );
 
     gui.separator();
-
 
     if(isRecording.val) {
         if(gui.button("Stop recording")) {
@@ -362,9 +319,7 @@ shell.on("gl-render", function (t) {
 
     gui.sliderInt("Recording Time", recordingTime, 1, 180);
 
-
     gui.separator();
-
 
     if (gui.button("Export")) {
 
@@ -372,7 +327,7 @@ shell.on("gl-render", function (t) {
 
         var blob = new Blob([json], {type: "text/plain;charset=utf-8"});
 
-        // use json text to generate hash. This hash then idenitifies the level.
+        // use json text to generate hash. This hash then uniquely identifies the level.
         var h = hash(json);
         var filename = "level" + h + ".json";
 
@@ -392,8 +347,7 @@ shell.on("gl-render", function (t) {
     }
 
     gui.textLine(importMessage);
-
-
+    
     gui.end(gl, canvas.width, canvas.height);
 
 });
