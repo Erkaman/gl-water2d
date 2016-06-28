@@ -39,4 +39,5 @@ You can see some simulations made using this implementation below
 
 </tbody></table>
 
-[You can see the full simulations in this video](https://www.youtube.com/watch?v=SHvIOMl7-pQ)
+[You can see the full simulations in this video](https://www.youtube.com/watch?v=SHvIOMl7-pQ).
+You can export the JSON files into the corresponding demo to run the simulations yourself. **But note that these simulations were renderered offline**, and they will probably not run in real-time for you. Note that the implementation is not very efficient, and using too many particles(about more than 1500) will slow down the GUI and the entire simualation.
