@@ -93,3 +93,12 @@ To then run the demo, do
 ```bash
 npm start
 ```
+
+
+## FAQ
+
+<b>Why does it say "Import Failed" when I try to import some json?</b>
+
+This means your json is invalid. Check the javascript console for more detailed error messages. 
+
+The most probable reason for failure is that you accidentaly got some garbage characters in the beginning of your json when your copied it(you can check this in a hex-editor). Be careful when copying. 
