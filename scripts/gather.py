@@ -31,20 +31,15 @@ while True:
     if not os.path.isfile(in_full_path):
          break
 
-#    print in_full_path
     os.rename(in_full_path, in_full_path_tga)
-
-
 
     out_file = "frame" + str(out_frame_num).rjust(8,'0') + ".png"
     out_full_path = os.path.join(out_path, out_file)
 
-    #print "copy ", in_full_path_tga, " to ", out_full_path
-
+    # if using graphicsmagick.
     subprocess.call([  "gm", "convert", in_full_path_tga, out_full_path  ]   )
-
-    # shutil.copyfile(in_full_path, out_full_path )
-
+    # if using imagemagick
+#    subprocess.call([  "convert", in_full_path_tga, out_full_path  ]   )
 
     in_file_num = in_file_num + 1
     out_frame_num = out_frame_num + 1
