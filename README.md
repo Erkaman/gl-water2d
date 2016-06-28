@@ -13,8 +13,8 @@ You can see some simulations made using this implementation below
 <td align="center"><img src="images/obstacles.gif" alt="Obstacles" width="268" height="336"></td>
 </tr>
 <tr>
-<td align="center"> <a href="json/container.json">container.json</a> </td>
-<td align="center"> <a href="json/obstacles.json">obstacles.json</a> </td>
+<td align="center"> <a href="https://raw.githubusercontent.com/Erkaman/gl-water2d/master/json/container.json">container.json</a> </td>
+<td align="center"> <a href="https://raw.githubusercontent.com/Erkaman/gl-water2d/master/json/obstacles.json">obstacles.json</a> </td>
 </tr>
 
 
@@ -23,8 +23,8 @@ You can see some simulations made using this implementation below
 <td align="center"><img src="images/ramps.gif" alt="Obstacles" width="268" height="336"></td>
 </tr>
 <tr>
-<td align="center"> <a href="json/red.json">red.json</a> </td>
-<td align="center"> <a href="json/ramps.json">ramps.json</a> </td>
+<td align="center"> <a href="https://raw.githubusercontent.com/Erkaman/gl-water2d/master/json/red.json">red.json</a> </td>
+<td align="center"> <a href="https://raw.githubusercontent.com/Erkaman/gl-water2d/master/json/ramps.json">ramps.json</a> </td>
 </tr>
 
 
@@ -33,8 +33,8 @@ You can see some simulations made using this implementation below
 <td align="center"><img src="images/sprinkler.gif" alt="Sprinkler" width="268" height="336"></td>
 </tr>
 <tr>
-<td align="center"> <a href="json/simple.json">simple.json</a> </td>
-<td align="center"> <a href="json/sprinkler.json">sprinkler.json</a> </td>
+<td align="center"> <a href="https://raw.githubusercontent.com/Erkaman/gl-water2d/master/json/simple.json">simple.json</a> </td>
+<td align="center"> <a href="https://raw.githubusercontent.com/Erkaman/gl-water2d/master/json/sprinkler.json">sprinkler.json</a> </td>
 </tr>
 
 </tbody></table>
