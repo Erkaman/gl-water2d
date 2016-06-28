@@ -17,20 +17,26 @@ var SCALED_WORLD_MAX = consts.SCALED_WORLD_MAX;
 var WORLD_SCALE = consts.WORLD_SCALE;
 
 
+/*
+Container for all the data of a level.
+We keep it all in one class, so that we can easily export and import levels as .json.
+ */
 function LevelData() {
 
     // how much of its original velocity that a particle gets to keep when it bounces against a capsule.
     this.collisionDamping = {val: 1.0 / 5.0};
 
+    // used in the viscosity:
     this.sigma = {val: 0.9};
     this.beta =  {val: 0.3};
+
     this.gravity = {val: +0.03}; // gravity force.
+
     // see the paper for definitions of these.
     this.restDensity = {val: 6.4};
     this.stiffness = {val: 0.0061};
     this.nearStiffness = {val: 0.625};
-
-
+    
     this.capsuleColor = [0, 0.5, 0];
 
 

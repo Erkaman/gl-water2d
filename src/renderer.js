@@ -61,7 +61,6 @@ Mesh.prototype.updateBuffers = function (gl, shader) {
     gl.vertexAttribPointer(shader.attributes.aPosition.location, 2, gl.FLOAT, false, 0, 0);
     this.positionBufferObject.unbind();
 
-
     this.colorBufferObject.update(this.colorBuffer);
     gl.enableVertexAttribArray(shader.attributes.aColor.location);
     gl.vertexAttribPointer(shader.attributes.aColor.location, 4, gl.FLOAT, false, 0, 0);
@@ -155,6 +154,9 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
     this.meshOther.prepareForRender();
     this.meshParticles.prepareForRender();
 
+    /*
+    Make capsule sprites.
+     */
     for (var i = 0; i < collisionBodies.length; ++i) {
 
         var body = collisionBodies[i];
@@ -171,6 +173,9 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
             [newCapsule.p0[0] / WORLD_SCALE, newCapsule.p0[1] / WORLD_SCALE],
             [newCapsule.p1[0] / WORLD_SCALE, newCapsule.p1[1] / WORLD_SCALE], newCapsule.radius / WORLD_SCALE, newCapsule.color, CAPSULE_SEGMENTS);
     }
+    /*
+    Make emitter sprites.
+     */
     for (var i = 0; i < emitters.length; ++i) {
 
         var emitter = emitters[i];
@@ -187,8 +192,9 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
         }
     }
 
-
-
+    /*
+    Make particle sprites.
+     */
     for (var i = 0; i < particles.length; ++i) {
 
         var particle = particles[i];
@@ -239,21 +245,13 @@ Renderer.prototype.draw = function (gl, collisionBodies, particles, newCapsule, 
     // for rendering everything but the particle, we don't want any alpha blending.
     // so in the second pass, render everything but particles.
     // also, it is important that we render this stuff after the particles.
-    // we can hide lots of visual bugs by doing this. 
+    // we can hide lots of visual bugs in the liquid simulation by doing this.
     gl.disable(gl.BLEND)
     this.meshOther.updateBuffers(gl, this.shader);
     this.meshOther.draw(gl);
 
 };
 
-
-/*
- Render a box.
-
- `color` is a RGB-triplet.
- the optional `alpha` argument specifies the transparency of the box.
- default value of `alpha` is 1.0
- */
 Renderer.prototype._texturedBox = function (mesh, position, size, color) {
 
 
@@ -272,20 +270,15 @@ Renderer.prototype._texturedBox = function (mesh, position, size, color) {
     var c = [color[0], color[1], color[2], alpha];
 
     // vertex 1
-    //this._coloredVertex(tl, c);
     mesh._texturedVertex(tl, c, [0.0, 0.0]);
 
     // vertex 2
-    //this._coloredVertex(bl, c);
     mesh._texturedVertex(bl, c, [0.0, 1.0]);
 
     // vertex 3
-    //  this._coloredVertex(tr, c);
     mesh._texturedVertex(tr, c, [1.0, 0.0]);
 
-
     // vertex 4
-//    this._coloredVertex(br, c);
     mesh._texturedVertex(br, c, [1.0, 1.0]);
 
     // triangle 1
