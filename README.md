@@ -1,5 +1,7 @@
 # 2D Smoothed Particle Hydrodynamics...
 
+TODO: this README is still under construction!
+
 Trying to implement 2D water simulation in WebGL using Smoothed Particle Hydrodynamics...
 
 
