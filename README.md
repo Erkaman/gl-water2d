@@ -1,8 +1,9 @@
-# 2D Smoothed Particle Hydrodynamics...
+# 2D Smoothed Liquid Simulation in WebGL
 
 TODO: this README is still under construction!
 
-Trying to implement 2D water simulation in WebGL using Smoothed Particle Hydrodynamics...
+This project is an implementation of 2D liquid simulation using  Smoothed Particle Hydrodynamics in WebGL.
+You can see some simulations made using this implementation below
 
 
 <table><thead>
@@ -38,3 +39,4 @@ Trying to implement 2D water simulation in WebGL using Smoothed Particle Hydrody
 
 </tbody></table>
 
+[You can see the full simulations in this video](https://www.youtube.com/watch?v=SHvIOMl7-pQ)
