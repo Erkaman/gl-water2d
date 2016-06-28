@@ -6,8 +6,8 @@ Trying to implement 2D water simulation in WebGL using Smoothed Particle Hydrody
 <table><thead>
 </thead><tbody>
 <tr>
-<td align="center"><img src="images/container.gif" alt="Container" width="384" height="480"></td>
-<td align="center"><img src="images/obstacles.gif" alt="Obstacles" width="384" height="480"></td>
+<td align="center"><img src="images/container.gif" alt="Container" width="268" height="336"></td>
+<td align="center"><img src="images/obstacles.gif" alt="Obstacles" width="268" height="336"></td>
 </tr>
 <tr>
 <td align="center"> <a href="json/obstacles.json">container.json</a> </td>
@@ -16,8 +16,8 @@ Trying to implement 2D water simulation in WebGL using Smoothed Particle Hydrody
 
 
 <tr>
-<td align="center"><img src="images/red.gif" alt="Red" width="384" height="480"></td>
-<td align="center"><img src="images/ramps.gif" alt="Obstacles" width="384" height="480"></td>
+<td align="center"><img src="images/red.gif" alt="Red" width="268" height="336"></td>
+<td align="center"><img src="images/ramps.gif" alt="Obstacles" width="268" height="336"></td>
 </tr>
 <tr>
 <td align="center"> <a href="json/red.json">red.json</a> </td>
@@ -26,8 +26,8 @@ Trying to implement 2D water simulation in WebGL using Smoothed Particle Hydrody
 
 
 <tr>
-<td align="center"><img src="images/simple.gif" alt="Simple" width="384" height="480"></td>
-<td align="center"><img src="images/sprinkler.gif" alt="Sprinkler" width="384" height="480"></td>
+<td align="center"><img src="images/simple.gif" alt="Simple" width="268" height="336"></td>
+<td align="center"><img src="images/sprinkler.gif" alt="Sprinkler" width="268" height="336"></td>
 </tr>
 <tr>
 <td align="center"> <a href="json/simple.json">simple.json</a> </td>
