@@ -10,6 +10,7 @@
   "author": "Eric Arnebäck <arnebackeric@gmail.com> (https://github.com/Erkaman)",
   "license": "MIT",
   "devDependencies": {
+    "budo": "^8.3.0",
     "clamp": "^1.0.1",
     "filesaver.js": "^0.2.0",
     "gl-buffer": "^2.1.2",
