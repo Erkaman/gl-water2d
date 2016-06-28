@@ -21,11 +21,10 @@ the water simulation.
  */
 var water;
 
+// global modes. Used by GUI.
 const GM_LEVEL = 10;
 const GM_LIQUID = 11;
-
 var globalMode = {val: GM_LEVEL};
-
 
 // edit modes. Used by GUI
 const EM_REMOVE = 0;
@@ -34,20 +33,22 @@ const EM_ADD_EMITTER = 2;
 const EM_EDIT_EMITTER = 4;
 var editMode = {val: EM_ADD_CAPSULE};
 
-var editEmitter = null; // the emitter being edited.
+var editEmitter = null; // the emitter currently being edited.
 
 var capsuleRadius = {val: 0.5}; // capsule radius of capsules that we add.
-var recordingTime = {val: 5}; // capsule radius of capsules that we add.
 
-var isRunningSimulation = {val: true}; // capsule radius of capsules that we add.
+
+var recordingTime = {val: 5}; // for many seconds to record.
+var isRecording = {val: false}; // whether we are recording.
+
+var isRunningSimulation = {val: true}; // whether we are running the simulation.
 
 var importMessage = "No Message";
 var recordingMessage = "Not recording";
 
-// ammount of seconds between the update steps of the water simulation.
+// amount of seconds between the update steps of the water simulation.
 const updateRate = 0.02;
 
-var isRecording = {val: false};
 
 
 function hash(text) {
@@ -64,12 +65,10 @@ function hash(text) {
 
 
 function startRecord(gl, canvas) {
+
     water.reset();
     isRunningSimulation.val =  true;
-
-
     isRecording.val = true;
-    myfs = null;
     // Request 1MB
     var bytes = 1024*1024*1024*30; // 30GB should be good enough
     window.webkitStorageInfo.requestQuota(PERSISTENT, bytes, function (grantedBytes) {
@@ -81,7 +80,8 @@ function startRecord(gl, canvas) {
 
             var totalTime  = 0.0;
 
-            function create_random_file() {
+            // we recursively call this function until we have recorded enough frames.
+            function recordFrame() {
 
                 var name = Math.random(); // File name doesn't matter
                 fs.root.getFile(name, {create: true}, function (entry) {
@@ -89,9 +89,12 @@ function startRecord(gl, canvas) {
 
                         var min = water.getMinPos();
                         var max = water.getMaxPos();
+
+                        // round
                         min = [Math.floor(min[0]), Math.floor(min[1])];
                         max = [Math.floor(max[0]), Math.floor(max[1])];
 
+                        // compute dimensions.
                         var width = max[0] - min[0];
                         var height = max[1] - min[1];
 
@@ -100,30 +103,23 @@ function startRecord(gl, canvas) {
                         width += width % 2 == 0 ? 0 : 1;
                         height += height % 2 == 0 ? 0 : 1;
 
-
-                        first = false;
-
-                        var bufferArray = new Uint8Array(width * height * 4);
-
+                        // update and render simulation
                         totalTime += updateRate;
                         water.update(canvas.width, canvas.height, shell.mouse, updateRate, isRunningSimulation.val);
-
                         water.draw(gl, editEmitter, isRecording.val);
-
-
-
                         gl.flush();
                         gl.finish();
 
 
-                        //     console.log("readpixels: ", min[0], min[1], width, height);
+                        // save framebuffer to our own buffer.
+                        var bufferArray = new Uint8Array(width * height * 4);
                         gl.readPixels(min[0], min[1], width, height, gl.RGBA, gl.UNSIGNED_BYTE, bufferArray);
 
-
-                        // Convert base64 to binary without UTF-8 mangling.
+                        // now put the framebuffer pixels into a TGA file.
                         var buffer = new Uint8Array(18 + width * height * 3);
                         var j = 0;
 
+                        // TGA header below. 
                         buffer[j++] = 0;
                         buffer[j++] = 0;
                         buffer[j++] = 2;
@@ -145,25 +141,20 @@ function startRecord(gl, canvas) {
                         buffer[j++] = 24;
                         buffer[j++] = 0;
 
+                        // after the header, put the pixel data.
                         for (var i = 0; i < width * height * 4; i += 4) {
-
                             buffer[j++] = bufferArray[i + 2];
-
                             buffer[j++] = bufferArray[i + 1];
-
                             buffer[j++] = bufferArray[i + 0];
                         }
-
-
+                        
                         // Write data
                         var blob = new Blob([buffer], {type: 'image/bmp'});
                         writer.seek(0);
                         writer.write(blob);
 
-                       // console.log('Writing file', frames, blob.size);
-
                         if(totalTime < recordingTime.val && isRecording.val) {
-                            create_random_file();
+                            recordFrame();
                             recordingMessage = "Recording: " +  totalTime.toFixed(1) + "/" + recordingTime.val;
                         }else {
                             console.log("DONE RECORDING");
@@ -178,7 +169,8 @@ function startRecord(gl, canvas) {
 
             }
 
-            create_random_file();
+            // start recording.
+            recordFrame();
 
 
         });
