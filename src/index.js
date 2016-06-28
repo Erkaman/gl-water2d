@@ -339,6 +339,8 @@ shell.on("gl-render", function (t) {
 
         if (json != null) {
             if(water.import(json)) {
+
+                water.reset();
                 importMessage = "Import Succeeded!";
             } else {
                 importMessage = "Import Failed!";
