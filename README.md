@@ -43,7 +43,7 @@ You can import the JSON files into the demo to run the simulations yourself, by 
 
 ## Brief Technical Details
 
-The water simulation is based on the paper [Particle-based Viscoelastic Fluid Simulation](http://www.ligum.umontreal.ca/Clavet-2005-PVFS/pvfs.pdf), which describes a variaton of Smoothed Particle Hydrodynamics. But not all details of the paper are implemented. The implemented parts are Double Density Relaxation(section 4), and Viscosity Impulses(section 5.3).
+The water simulation is based on the paper [Particle-based Viscoelastic Fluid Simulation](http://www.ligum.umontreal.ca/Clavet-2005-PVFS/pvfs.pdf), which describes a variation of Smoothed Particle Hydrodynamics. But not all details of the paper are implemented. The implemented parts are Double Density Relaxation(section 4), and Viscosity Impulses(section 5.3).
 
 The environment is all represented by capsulses. This simplifies the code much, because it is trivial to check for collision with a capsule. To handle the collision, we use the formulas derived in [section 4.4.2.2 of"Lagrangian Fluid Dynamics Using Smoothed Particle Hydrodynamics"](http://image.diku.dk/projects/media/kelager.06.pdf#page=33).
 
